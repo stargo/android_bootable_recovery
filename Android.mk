@@ -21,7 +21,8 @@ LOCAL_SRC_FILES := \
     ../../system/core/toolbox/reboot.c \
     firmware.c \
     edifyscripting.c \
-    setprop.c
+    setprop.c \
+    safebootcommands.c
 
 ADDITIONAL_RECOVERY_FILES := $(shell echo $$ADDITIONAL_RECOVERY_FILES)
 LOCAL_SRC_FILES += $(ADDITIONAL_RECOVERY_FILES)
@@ -34,7 +35,7 @@ ifdef I_AM_KOUSH
 RECOVERY_NAME := ClockworkMod Recovery
 LOCAL_CFLAGS += -DI_AM_KOUSH
 else
-RECOVERY_NAME := CWM-based Recovery
+RECOVERY_NAME := CWM-based Safestrap Recovery
 endif
 
 RECOVERY_VERSION := $(RECOVERY_NAME) v5.0.2.3

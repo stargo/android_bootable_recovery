@@ -45,6 +45,8 @@
 #include "extendedcommands.h"
 #include "flashutils/flashutils.h"
 
+#include "safebootcommands.h"
+
 static const struct option OPTIONS[] = {
   { "send_intent", required_argument, NULL, 's' },
   { "update_package", required_argument, NULL, 'u' },
@@ -752,6 +754,9 @@ prompt_and_wait() {
                 break;
             case ITEM_ADVANCED:
                 show_advanced_menu();
+                break;
+            case ITEM_SAFEBOOT:
+                show_safe_boot_menu();
                 break;
             case ITEM_POWEROFF:
                 poweroff=1;
