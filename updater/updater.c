@@ -117,6 +117,7 @@ int main(int argc, char** argv) {
     state.errmsg = NULL;
 
     char* result = Evaluate(&state, root);
+
     if (result == NULL) {
         if (state.errmsg == NULL) {
             fprintf(stderr, "script aborted (no error message)\n");

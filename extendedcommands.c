@@ -350,7 +350,7 @@ void show_nandroid_restore_menu()
         return;
 
     if (confirm_selection("Confirm restore?", "Yes - Restore"))
-        nandroid_restore(file, 1, 1, 1, 1, 1, 0);
+        nandroid_restore(file, 1, 1, 1, 1, 1, 0, 0);
 }
 
 #ifndef BOARD_UMS_LUNFILE
@@ -574,7 +574,7 @@ int is_safe_to_format(char* name)
 {
     char str[255];
     char* partition;
-    property_get("ro.cwm.forbid_format", str, "/misc,/radio,/bootloader,/recovery,/efs");
+    property_get("ro.cwm.forbid_format", str, "/misc,/radio,/bootloader,/recovery,/efs,/systemorig");
 
     partition = strtok(str, ", ");
     while (partition != NULL) {
@@ -738,12 +738,13 @@ void show_nandroid_advanced_restore_menu()
                                 NULL
     };
 
-    static char* list[] = { "Restore boot",
+    static char* list[] = { /* "Restore boot", */
                             "Restore system",
                             "Restore data",
                             "Restore cache",
                             "Restore sd-ext",
                             "Restore wimax",
+                            "Restore original system",
                             NULL
     };
     
@@ -758,29 +759,35 @@ void show_nandroid_advanced_restore_menu()
     int chosen_item = get_menu_selection(headers, list, 0, 0);
     switch (chosen_item)
     {
+	/* 
         case 0:
             if (confirm_selection(confirm_restore, "Yes - Restore boot"))
-                nandroid_restore(file, 1, 0, 0, 0, 0, 0);
+                nandroid_restore(file, 1, 0, 0, 0, 0, 0, 0);
+            break;
+        */
+        case 0:
+            if (confirm_selection(confirm_restore, "Yes - Restore system"))
+                nandroid_restore(file, 0, 1, 0, 0, 0, 0, 0);
             break;
         case 1:
-            if (confirm_selection(confirm_restore, "Yes - Restore system"))
-                nandroid_restore(file, 0, 1, 0, 0, 0, 0);
+            if (confirm_selection(confirm_restore, "Yes - Restore data"))
+                nandroid_restore(file, 0, 0, 1, 0, 0, 0, 0);
             break;
         case 2:
-            if (confirm_selection(confirm_restore, "Yes - Restore data"))
-                nandroid_restore(file, 0, 0, 1, 0, 0, 0);
+            if (confirm_selection(confirm_restore, "Yes - Restore cache"))
+                nandroid_restore(file, 0, 0, 0, 1, 0, 0, 0);
             break;
         case 3:
-            if (confirm_selection(confirm_restore, "Yes - Restore cache"))
-                nandroid_restore(file, 0, 0, 0, 1, 0, 0);
+            if (confirm_selection(confirm_restore, "Yes - Restore sd-ext"))
+                nandroid_restore(file, 0, 0, 0, 0, 1, 0, 0);
             break;
         case 4:
-            if (confirm_selection(confirm_restore, "Yes - Restore sd-ext"))
-                nandroid_restore(file, 0, 0, 0, 0, 1, 0);
+            if (confirm_selection(confirm_restore, "Yes - Restore wimax"))
+                nandroid_restore(file, 0, 0, 0, 0, 0, 1, 0);
             break;
         case 5:
-            if (confirm_selection(confirm_restore, "Yes - Restore wimax"))
-                nandroid_restore(file, 0, 0, 0, 0, 0, 1);
+            if (confirm_selection(confirm_restore, "Yes - Restore original system"))
+                nandroid_restore(file, 0, 0, 0, 0, 0, 0, 1);
             break;
     }
 }
@@ -1051,6 +1058,7 @@ void create_fstab()
     if (has_datadata()) {
         write_fstab_root("/datadata", file);
     }
+    write_fstab_root("/systemorig", file);
     write_fstab_root("/system", file);
     write_fstab_root("/sdcard", file);
     write_fstab_root("/sd-ext", file);
@@ -1122,7 +1130,7 @@ void process_volumes() {
     ui_print("in case of error.\n");
 
     nandroid_backup(backup_path);
-    nandroid_restore(backup_path, 1, 1, 1, 1, 1, 0);
+    nandroid_restore(backup_path, 1, 1, 1, 1, 1, 0, 0);
     ui_set_show_text(0);
 }
 

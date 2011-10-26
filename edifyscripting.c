@@ -131,6 +131,10 @@ Value* FormatFn(const char* name, State* state, int argc, Expr* argv[]) {
     if (ReadArgs(state, argv, 1, &path) < 0) {
         return NULL;
     }
+    if (strcmp(path,BOARD_NONSAFE_SYSTEM_DEVICE) == 0) {
+        /* dynamically change system block device mount to /dev/block/system alias */
+        path = strdup("/dev/block/system");
+    }
     
     ui_print("Formatting %s...\n", path);
     if (0 != format_volume(path)) {
@@ -139,7 +143,7 @@ Value* FormatFn(const char* name, State* state, int argc, Expr* argv[]) {
     }
     
     if (strcmp(path, "/data") == 0 && has_datadata()) {
-        ui_print("Formatting /datadata...\n", path);
+        ui_print("Formatting /datadata...\n");
         if (0 != format_volume("/datadata")) {
             free(path);
             return StringValue(strdup(""));
@@ -162,6 +166,10 @@ Value* BackupFn(const char* name, State* state, int argc, Expr* argv[]) {
     char* path;
     if (ReadArgs(state, argv, 1, &path) < 0) {
         return NULL;
+    }
+    if (strcmp(path,BOARD_NONSAFE_SYSTEM_DEVICE) == 0) {
+        /* dynamically change system block device mount to /dev/block/system alias */
+        path = strdup("/dev/block/system");
     }
     
     if (0 != nandroid_backup(path))
@@ -212,7 +220,7 @@ Value* RestoreFn(const char* name, State* state, int argc, Expr* argv[]) {
     free(args);
     free(args2);
 
-    if (0 != nandroid_restore(path, restoreboot, restoresystem, restoredata, restorecache, restoresdext, 0)) {
+    if (0 != nandroid_restore(path, restoreboot, restoresystem, restoredata, restorecache, restoresdext, 0, 0)) {
         free(path);
         return StringValue(strdup(""));
     }
@@ -245,7 +253,10 @@ Value* MountFn(const char* name, State* state, int argc, Expr* argv[]) {
     if (ReadArgs(state, argv, 1, &path) < 0) {
         return NULL;
     }
-    
+    if (strcmp(path,BOARD_NONSAFE_SYSTEM_DEVICE) == 0) {
+        /* dynamically change system block device mount to /dev/block/system alias */
+        path = strdup("/dev/block/system");
+    }
     if (0 != ensure_path_mounted(path))
         return StringValue(strdup(""));
 

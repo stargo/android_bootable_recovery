@@ -19,6 +19,14 @@ LOCAL_MODULE_TAGS := eng
 
 LOCAL_SRC_FILES := $(updater_src_files)
 
+BOARD_RECOVERY_DEFINES := BOARD_NONSAFE_SYSTEM_DEVICE
+
+$(foreach board_define,$(BOARD_RECOVERY_DEFINES), \
+  $(if $($(board_define)), \
+    $(eval LOCAL_CFLAGS += -D$(board_define)=\"$($(board_define))\") \
+  ) \
+  )
+
 ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
 LOCAL_CFLAGS += -DUSE_EXT4
 LOCAL_C_INCLUDES += system/extras/ext4_utils

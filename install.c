@@ -123,7 +123,8 @@ try_update_binary(const char *path, ZipArchive *zip) {
         return INSTALL_UPDATE_BINARY_MISSING;
     }
 
-    char* binary = "/tmp/update_binary";
+    char* binary = "/sbin/update_binary";
+    /* Don't overwrite the binary -- special protections
     unlink(binary);
     int fd = creat(binary, 0755);
     if (fd < 0) {
@@ -139,6 +140,7 @@ try_update_binary(const char *path, ZipArchive *zip) {
         mzCloseZipArchive(zip);
         return 1;
     }
+    */
 
     int pipefd[2];
     pipe(pipefd);
@@ -385,5 +387,8 @@ install_package(const char *path)
     /* Verify and install the contents of the package.
      */
     ui_print("Installing update...\n");
-    return try_update_binary(path, &zip);
+    err = try_update_binary(path, &zip);
+    /* here we run /sbin/post-install.sh */
+    __system("/sbin/post-install.sh");
+    return err;
 }

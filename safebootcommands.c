@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include <sys/stat.h>
+#include <sys/vfs.h>
 
 #include <signal.h>
 #include <sys/wait.h>
@@ -25,6 +26,7 @@
 #include "extendedcommands.h"
 #include "nandroid.h"
 #include "mounts.h"
+#include "roots.h"
 #include "flashutils/flashutils.h"
 #include "edify/expr.h"
 #include <libgen.h>
@@ -59,8 +61,8 @@ int check_systemorig_mount() {
 int get_safe_mode() {
     int result =0;
     if (check_systemorig_mount()) {
-       struct stat info;
-       if (0 == stat(SAFE_SYSTEM_FILE, &info))
+       struct statfs info;
+       if (0 == statfs(SAFE_SYSTEM_FILE, &info))
            result = 1;
     }
     return result;
@@ -100,19 +102,104 @@ void show_safe_boot_menu() {
     }
 }
 
+#define ORIG_BACKUP_PATH "/sdcard/clockworkmod/orig"
+#define SAFE_BACKUP_PATH "/sdcard/clockworkmod/safe"
+
 void toggle_safe_mode() {
     int safe_mode = get_safe_mode();
-    if (!safe_mode) {
-        char cmd[256];
-        strcpy(cmd, "touch ");
-        strcat(cmd, SAFE_SYSTEM_FILE);
-        __system(cmd);
-    } else {
-        char cmd[256];
-        strcpy(cmd, "rm ");
-        strcat(cmd, SAFE_SYSTEM_FILE);
-        __system(cmd);
+    struct statfs info;
+    char cmd[256];
+
+    if (ensure_path_mounted("/sdcard") != 0) {
+        ui_print("Can't mount /sdcard\n");
+        return;
     }
+   
+    int ret;
+    if (0 != (ret = statfs("/sdcard", &info))) {
+        ui_print("Unable to stat /sdcard\n");
+        return;
+    }
+    uint64_t bavail = info.f_bavail;
+    uint64_t bsize = info.f_bsize;
+    uint64_t sdcard_free = bavail * bsize;
+    uint64_t sdcard_free_mb = sdcard_free / (uint64_t)(1024 * 1024);
+    ui_print("SD Card space free: %lluMB\n", sdcard_free_mb);
+    if (sdcard_free_mb < 250)
+        ui_print("There may not be enough free space to complete backup... continuing...\n");
+
+    ui_set_background(BACKGROUND_ICON_INSTALLING);
+    ui_show_indeterminate_progress();
+    if (!safe_mode) {
+   
+        sprintf(cmd, "mkdir -p %s", ORIG_BACKUP_PATH);
+        __system(cmd);
+
+        /* 1. make a backup of the existing /data + /cache in /sdcard/clockworkmod/backup/orig/ */
+        ui_print("\n-- Backing up Original System...\n");
+
+        sprintf(cmd, "rm %s/*", ORIG_BACKUP_PATH);
+        __system(cmd);
+        if (0 != (ret = nandroid_backup_partition(ORIG_BACKUP_PATH, "/data"))) return;
+        ui_set_progress(0.20);
+        if (0 != (ret = nandroid_backup_partition(ORIG_BACKUP_PATH, "/cache"))) return;
+        ui_set_progress(0.40);
+
+        if (0 != (ret = nandroid_restore_partition(SAFE_BACKUP_PATH, "/data"))) return;
+        ui_set_progress(0.60);
+        if (0 != (ret = nandroid_restore_partition(SAFE_BACKUP_PATH, "/cache"))) return;
+        ui_set_progress(0.80);
+
+        /* 3. wipe Dalvik Cache */
+        __system("rm -r /data/dalvik-cache");
+        __system("rm -r /cache/dalvik-cache");
+        __system("rm -r /sd-ext/dalvik-cache");
+        ui_set_progress(0.90);
+
+        /* 4. touch SAFE_SYSTEM_FILE */
+        sprintf(cmd, "touch %s", SAFE_SYSTEM_FILE);
+        __system(cmd);
+
+        ui_set_progress(1);
+        ui_print("Swap to Safe System Complete.\n");
+
+    } else {
+
+        sprintf(cmd, "mkdir -p %s", SAFE_BACKUP_PATH);
+        __system(cmd);
+
+        /* 1. make a backup of the existing /data + /cache in /sdcard/clockworkmod/backup/safe/ */
+        ui_print("\n-- Backing up Safe System...\n");
+
+        sprintf(cmd, "rm %s/*", SAFE_BACKUP_PATH);
+        __system(cmd);
+        if (0 != (ret = nandroid_backup_partition(SAFE_BACKUP_PATH, "/data"))) return;
+        ui_set_progress(0.20);
+        if (0 != (ret = nandroid_backup_partition(SAFE_BACKUP_PATH, "/cache"))) return;
+        ui_set_progress(0.40);
+
+        if (0 != (ret = nandroid_restore_partition(ORIG_BACKUP_PATH, "/data"))) return;
+        ui_set_progress(0.60);
+        if (0 != (ret = nandroid_restore_partition(ORIG_BACKUP_PATH, "/cache"))) return;
+        ui_set_progress(0.80);
+
+        /* 3. wipe Dalvik Cache */
+        __system("rm -r /data/dalvik-cache");
+        __system("rm -r /cache/dalvik-cache");
+        __system("rm -r /sd-ext/dalvik-cache");
+        ui_set_progress(0.90);
+
+        /* 4. rm SAFE_SYSTEM_FILE */
+        sprintf(cmd, "rm %s", SAFE_SYSTEM_FILE);
+        __system(cmd);
+
+        ui_set_progress(1);
+        ui_print("Swap to Original System Complete.\n");
+    }
+    sync();
+    ui_set_background(BACKGROUND_ICON_NONE);
+    ui_reset_progress();
+
     safe_mode = get_safe_mode();
     ui_print("Safe System is now: %s!\n", safe_mode ? "ENABLED" : "DISABLED");
 }

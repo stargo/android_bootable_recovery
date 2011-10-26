@@ -226,6 +226,11 @@ int nandroid_backup_partition(const char* backup_path, const char* root) {
 
 int nandroid_backup(const char* backup_path)
 {
+    return nandroid_backup_multi(backup_path, 1, 1, 1, 1, 1, 1, 1);
+}
+
+int nandroid_backup_multi(const char* backup_path, int backup_boot, int backup_system, int backup_data, int backup_cache, int backup_sdext, int backup_wimax, int backup_systemorig)
+{
     ui_set_background(BACKGROUND_ICON_INSTALLING);
     
     if (ensure_path_mounted("/sdcard") != 0)
@@ -247,60 +252,68 @@ int nandroid_backup(const char* backup_path)
     sprintf(tmp, "mkdir -p %s", backup_path);
     __system(tmp);
 
-    if (0 != (ret = nandroid_backup_partition(backup_path, "/boot")))
+    if (backup_boot && (0 != (ret = nandroid_backup_partition(backup_path, "/boot"))))
         return ret;
 
-    if (0 != (ret = nandroid_backup_partition(backup_path, "/recovery")))
+    if (backup_boot && (0 != (ret = nandroid_backup_partition(backup_path, "/recovery"))))
         return ret;
 
     Volume *vol = volume_for_path("/wimax");
-    if (vol != NULL && 0 == stat(vol->device, &s))
-    {
-        char serialno[PROPERTY_VALUE_MAX];
-        ui_print("Backing up WiMAX...\n");
-        serialno[0] = 0;
-        property_get("ro.serialno", serialno, "");
-        sprintf(tmp, "%s/wimax.%s.img", backup_path, serialno);
-        ret = backup_raw_partition(vol->fs_type, vol->device, tmp);
-        if (0 != ret)
-            return print_and_error("Error while dumping WiMAX image!\n");
+    if (backup_wimax) {
+        if (vol != NULL && 0 == statfs(vol->device, &s))
+        {
+            char serialno[PROPERTY_VALUE_MAX];
+            ui_print("Backing up WiMAX...\n");
+            serialno[0] = 0;
+            property_get("ro.serialno", serialno, "");
+            sprintf(tmp, "%s/wimax.%s.img", backup_path, serialno);
+            ret = backup_raw_partition(vol->fs_type, vol->device, tmp);
+            if (0 != ret)
+                return print_and_error("Error while dumping WiMAX image!\n");
+        }
     }
 
-    if (0 != (ret = nandroid_backup_partition(backup_path, "/system")))
+    /* backup original system */
+    if (backup_systemorig && (0 != (ret = nandroid_backup_partition(backup_path, "/systemorig"))))
         return ret;
 
-    if (0 != (ret = nandroid_backup_partition(backup_path, "/data")))
+    if (backup_system && (0 != (ret = nandroid_backup_partition(backup_path, "/system"))))
         return ret;
 
-    if (has_datadata()) {
+    if (backup_data && (0 != (ret = nandroid_backup_partition(backup_path, "/data"))))
+        return ret;
+
+    if (backup_data && has_datadata()) {
         if (0 != (ret = nandroid_backup_partition(backup_path, "/datadata")))
             return ret;
     }
 
-    if (0 != stat("/sdcard/.android_secure", &s))
+    if (backup_data && (0 != statfs("/sdcard/.android_secure", &s)))
     {
         ui_print("No /sdcard/.android_secure found. Skipping backup of applications on external storage.\n");
     }
     else
     {
-        if (0 != (ret = nandroid_backup_partition_extended(backup_path, "/sdcard/.android_secure", 0)))
+        if (backup_data && (0 != (ret = nandroid_backup_partition_extended(backup_path, "/sdcard/.android_secure", 0))))
             return ret;
     }
 
-    if (0 != (ret = nandroid_backup_partition_extended(backup_path, "/cache", 0)))
+    if (backup_cache && (0 != (ret = nandroid_backup_partition_extended(backup_path, "/cache", 0))))
         return ret;
 
-    vol = volume_for_path("/sd-ext");
-    if (vol == NULL || 0 != stat(vol->device, &s))
-    {
-        ui_print("No sd-ext found. Skipping backup of sd-ext.\n");
-    }
-    else
-    {
-        if (0 != ensure_path_mounted("/sd-ext"))
-            ui_print("Could not mount sd-ext. sd-ext backup may not be supported on this device. Skipping backup of sd-ext.\n");
-        else if (0 != (ret = nandroid_backup_partition(backup_path, "/sd-ext")))
-            return ret;
+    if (backup_sdext) {
+        vol = volume_for_path("/sd-ext");
+        if (vol == NULL || 0 != statfs(vol->device, &s))
+        {
+            ui_print("No sd-ext found. Skipping backup of sd-ext.\n");
+        }
+        else
+        {
+            if (0 != ensure_path_mounted("/sd-ext"))
+                ui_print("Could not mount sd-ext. sd-ext backup may not be supported on this device. Skipping backup of sd-ext.\n");
+            else if (0 != (ret = nandroid_backup_partition(backup_path, "/sd-ext")))
+                return ret;
+        }
     }
 
     ui_print("Generating md5 sum...\n");
@@ -396,7 +409,7 @@ int nandroid_restore_partition_extended(const char* backup_path, const char* mou
 
     char tmp[PATH_MAX];
     sprintf(tmp, "%s/%s.img", backup_path, name);
-    struct stat file_info;
+    struct statfs file_info;
     if (0 != (ret = statfs(tmp, &file_info))) {
         // can't find the backup, it may be the new backup format?
         // iterate through the backup types
@@ -441,7 +454,7 @@ int nandroid_restore_partition_extended(const char* backup_path, const char* mou
 
     ensure_directory(mount_point);
 
-    int callback = stat("/sdcard/clockworkmod/.hidenandroidprogress", &file_info) != 0;
+    int callback = 0; /* stat("/sdcard/clockworkmod/.hidenandroidprogress", &file_info) != 0; */
 
     ui_print("Restoring %s...\n", name);
     if (backup_filesystem == NULL) {
@@ -507,7 +520,7 @@ int nandroid_restore_partition(const char* backup_path, const char* root) {
     return nandroid_restore_partition_extended(backup_path, root, 1);
 }
 
-int nandroid_restore(const char* backup_path, int restore_boot, int restore_system, int restore_data, int restore_cache, int restore_sdext, int restore_wimax)
+int nandroid_restore(const char* backup_path, int restore_boot, int restore_system, int restore_data, int restore_cache, int restore_sdext, int restore_wimax, int restore_systemorig)
 {
     ui_set_background(BACKGROUND_ICON_INSTALLING);
     ui_show_indeterminate_progress();
@@ -556,6 +569,9 @@ int nandroid_restore(const char* backup_path, int restore_boot, int restore_syst
                 return ret;
         }
     }
+
+    if (restore_systemorig && 0 != (ret = nandroid_restore_partition(backup_path, "/systemorig")))
+        return ret;
 
     if (restore_system && 0 != (ret = nandroid_restore_partition(backup_path, "/system")))
         return ret;
@@ -610,7 +626,7 @@ int nandroid_main(int argc, char** argv)
     {
         if (argc != 3)
             return nandroid_usage();
-        return nandroid_restore(argv[2], 1, 1, 1, 1, 1, 0);
+        return nandroid_restore(argv[2], 1, 1, 1, 1, 1, 0, 0);
     }
     
     return nandroid_usage();
