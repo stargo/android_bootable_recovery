@@ -388,7 +388,5 @@ install_package(const char *path)
      */
     ui_print("Installing update...\n");
     err = try_update_binary(path, &zip);
-    /* here we run /sbin/post-install.sh */
-    __system("/sbin/post-install.sh");
     return err;
 }
