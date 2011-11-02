@@ -44,6 +44,7 @@
 #include "mtdutils/mtdutils.h"
 #include "mmcutils/mmcutils.h"
 //#include "edify/parser.h"
+#include "safebootcommands.h"
 
 Value* UIPrintFn(const char* name, State* state, int argc, Expr* argv[]) {
     char** args = ReadVarArgs(state, argc, argv);
@@ -172,7 +173,7 @@ Value* BackupFn(const char* name, State* state, int argc, Expr* argv[]) {
         path = strdup("/dev/block/system");
     }
     
-    if (0 != nandroid_backup(path))
+    if (0 != nandroid_backup(path, "/sdcard", 0))
         return StringValue(strdup(""));
     
     return StringValue(strdup(path));
@@ -197,6 +198,7 @@ Value* RestoreFn(const char* name, State* state, int argc, Expr* argv[]) {
     int restoredata = 1;
     int restorecache = 1;
     int restoresdext = 1;
+    int restorewebtop = 1;
     int i;
     for (i = 1; i < argc; i++)
     {
@@ -212,6 +214,8 @@ Value* RestoreFn(const char* name, State* state, int argc, Expr* argv[]) {
             restorecache = 0;
         else if (strcmp(args2[i], "nosd-ext") == 0)
             restoresdext = 0;
+        else if (strcmp(args2[i], "nowebtop") == 0)
+            restorewebtop = 0;
     }
     
     for (i = 0; i < argc; ++i) {
@@ -220,7 +224,7 @@ Value* RestoreFn(const char* name, State* state, int argc, Expr* argv[]) {
     free(args);
     free(args2);
 
-    if (0 != nandroid_restore(path, restoreboot, restoresystem, restoredata, restorecache, restoresdext, 0, 0)) {
+    if (0 != nandroid_restore(path, restoreboot, restoresystem, restoredata, restorecache, restoresdext, 0, restorewebtop, 0)) {
         free(path);
         return StringValue(strdup(""));
     }
@@ -328,14 +332,16 @@ int run_and_remove_extendedcommand()
         }
         sleep(1);
     }
-    remove("/sdcard/clockworkmod/.recoverycheckpoint");
+    sprintf(tmp, "/sdcard/%s/.recoverycheckpoint", EXPAND(RECOVERY_FOLDER));
+    remove(tmp);
     if (i == 0) {
         ui_print("Timed out waiting for SD card... continuing anyways.");
     }
 
     ui_print("Verifying SD Card marker...\n");
     struct stat st;
-    if (stat("/sdcard/clockworkmod/.salted_hash", &st) != 0) {
+    sprintf(tmp, "/sdcard/%s/.salted_hash", EXPAND(RECOVERY_FOLDER));
+    if (stat(tmp, &st) != 0) {
         ui_print("SD Card marker not found...\n");
         if (volume_for_path("/emmc") != NULL) {
             ui_print("Checking Internal SD Card marker...\n");
