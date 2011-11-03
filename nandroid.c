@@ -227,7 +227,7 @@ int nandroid_backup_partition(const char* backup_path, const char* root) {
     return nandroid_backup_partition_extended(backup_path, root, 1);
 }
 
-int nandroid_backup(const char* backup_path, const char* sdcard_path, int skip_webtop) {
+int nandroid_backup(const char* backup_path, const char* sdcard_path, int skip_webtop, int skip_origsys) {
     ui_set_background(BACKGROUND_ICON_INSTALLING);
     
     if (ensure_path_mounted(backup_path) != 0) {
@@ -276,7 +276,7 @@ int nandroid_backup(const char* backup_path, const char* sdcard_path, int skip_w
     }
 
     /* backup original system */
-    if (safemode == 0 && (0 != (ret = nandroid_backup_partition(backup_path, "/systemorig"))))
+    if (skip_origsys == 0 && (0 != (ret = nandroid_backup_partition(backup_path, "/systemorig"))))
         return ret;
 
     if (0 != (ret = nandroid_backup_partition(backup_path, "/system")))
@@ -670,7 +670,7 @@ int nandroid_main(int argc, char** argv)
             return nandroid_usage();
         char backup_path[PATH_MAX];
         nandroid_generate_timestamp_path(backup_path, (argc == 3) ? argv[2] : "/sdcard");
-        return nandroid_backup(backup_path, (argc == 3) ? argv[2] : "/sdcard", 0);
+        return nandroid_backup(backup_path, (argc == 3) ? argv[2] : "/sdcard", 0, (safemode) ? 1 : 0);
     }
 
     if (strcmp("restore", argv[1]) == 0)

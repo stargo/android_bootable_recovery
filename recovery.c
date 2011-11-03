@@ -698,9 +698,10 @@ wipe_data(int confirm) {
 static void
 prompt_and_wait() {
     safemode = get_safe_mode();
-    char** headers = prepend_title((const char**)MENU_HEADERS);
+    char** headers = NULL;
 
     for (;;) {
+        headers = prepend_title((const char**)MENU_HEADERS);
         finish_recovery(NULL);
         ui_reset_progress();
 
@@ -741,6 +742,7 @@ prompt_and_wait() {
                     {
                         ui_print("\n-- Install from sdcard...\n");
                         int status = install_package(SDCARD_PACKAGE_FILE);
+                        safemode = get_safe_mode();
                         if (status != INSTALL_SUCCESS) {
                             ui_set_background(BACKGROUND_ICON_ERROR);
                             ui_print("Installation aborted.\n");
@@ -757,6 +759,7 @@ prompt_and_wait() {
                     ui_print(".zip install is only available while Safe System is enabled.\n");
                 } else {
                     show_install_update_menu();
+                    safemode = get_safe_mode();
                 }
                 break;
             case ITEM_NANDROID:

@@ -72,19 +72,19 @@ int get_safe_mode() {
 
 void show_safe_boot_menu() {
     char tmp[PATH_MAX];
-    sprintf(tmp, "Currently: %s", safemode ? "ENABLED" : "DISABLED");
     char* headers[] = {  "Safe System Menu",
                                 "",
                                 "",
                                 NULL
     };
-    headers[1] = strdup(tmp);
     static char* list[] = { "Toggle Safe System",
                             NULL
     };
 
     for (;;)
     {
+        sprintf(tmp, "Currently: %s", safemode ? "ENABLED" : "DISABLED");
+        headers[1] = strdup(tmp);
         int chosen_item = get_menu_selection(headers, list, 0, 0);
         if (chosen_item == GO_BACK)
             break;

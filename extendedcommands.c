@@ -925,10 +925,6 @@ void show_nandroid_advanced_restore_menu(const char* path)
         list[6] = NULL;
         webtop_offset = -1;
     }
-    if (safemode == 1) {
-        // disable origsys when in safemode
-        list[7] = NULL;
-    }
     for (i = 0; i < num_menu_items - 1; i++)
         if (list[i] == NULL) {
             for (j = i; j < num_menu_items; j++) {
@@ -961,7 +957,7 @@ void show_nandroid_advanced_restore_menu(const char* path)
     } else if (webtop_offset == 0 && chosen_item == (6 + boot_offset + sdext_offset + wimax_offset)) { /* webtop */
         if (confirm_selection(confirm_restore, "Yes - Restore webtop"))
             nandroid_restore(file, 0, 0, 0, 0, 0, 0, 1, 0);
-    } else if (safemode == 0 && chosen_item == (7 + boot_offset + sdext_offset + wimax_offset + webtop_offset)) { /* origsys */
+    } else if (chosen_item == (7 + boot_offset + sdext_offset + wimax_offset + webtop_offset)) { /* origsys */
         if (confirm_selection(confirm_restore, "Yes - Restore original system"))
             nandroid_restore(file, 0, 0, 0, 0, 0, 0, 0, 1);
     }
@@ -980,6 +976,7 @@ void show_nandroid_menu()
                             "Advanced Restore",
                             NULL
     };
+    safemode = get_safe_mode();
 #ifdef BOARD_HAS_SDCARD_INTERNAL
     int chosen_sdcard = -1;
 #endif
@@ -1012,13 +1009,13 @@ void show_nandroid_menu()
                 int skip_webtop = 1;
 #ifdef BOARD_HAS_WEBTOP
                 static char* header[] = { "Include webtop in backup?",
-                                           "",
-                                           NULL
+                                          "",
+                                          NULL
                 };
 
                 static char* item[] = { "Yes",
-                                         "No",
-                                         NULL
+                                        "No",
+                                        NULL
                 };
 
                 skip_webtop = get_menu_selection(header, item, 0, 0);
@@ -1026,6 +1023,21 @@ void show_nandroid_menu()
                     return;
                 }
 #endif
+                int skip_origsys = 0;
+                if (safemode) {
+                    static char* header[] = { "Include primary system in backup?",
+                                              "",
+                                              NULL
+                    };
+                    static char* item[] = { "Yes",
+                                            "No",
+                                            NULL
+                    };
+                    skip_origsys = get_menu_selection(header, item, 0, 0);
+                    if (skip_origsys == GO_BACK) {
+                        return;
+                    }
+                }
                 if (tmp == NULL)
                 {
                     struct timeval tp;
@@ -1038,7 +1050,7 @@ void show_nandroid_menu()
                     strftime(tmp_path, sizeof(tmp_path), "%F.%H.%M.%S", tmp);
                     sprintf(final_path, "%s/%s/backup/%s-%s", backup_path, EXPAND(RECOVERY_FOLDER), safemode==0 ? "nonsafe" : "safe", tmp_path);
                 }
-                nandroid_backup(final_path, backup_path, skip_webtop);
+                nandroid_backup(final_path, backup_path, skip_webtop, skip_origsys);
             }
             break;
         case 1:
@@ -1406,7 +1418,7 @@ void process_volumes() {
     ui_print("named %s. Try restoring it\n", backup_name);
     ui_print("in case of error.\n");
 
-    nandroid_backup(backup_path, "/sdcard", 0);
+    nandroid_backup(backup_path, "/sdcard", 0, 0);
     nandroid_restore(backup_path, 1, 1, 1, 1, 1, 0, 1, 0);
     ui_set_show_text(0);
 }

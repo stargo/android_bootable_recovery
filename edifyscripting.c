@@ -173,7 +173,7 @@ Value* BackupFn(const char* name, State* state, int argc, Expr* argv[]) {
         path = strdup("/dev/block/system");
     }
     
-    if (0 != nandroid_backup(path, "/sdcard", 0))
+    if (0 != nandroid_backup(path, "/sdcard", 0, 0))
         return StringValue(strdup(""));
     
     return StringValue(strdup(path));
