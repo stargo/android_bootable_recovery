@@ -78,6 +78,7 @@ void show_safe_boot_menu() {
                                 NULL
     };
     static char* list[] = { "Toggle Safe System",
+                            "Quick Toggle Safe System (Dangerous)",
                             NULL
     };
 
@@ -98,14 +99,41 @@ void show_safe_boot_menu() {
                 if (confirm_selection(confirm_install, confirm)) toggle_safe_mode();
                 break;
             }
+            case 1:
+            {
+                static char* confirm_install  = "Confirm Quick Toggle? (WARNING: DANGEROUS!)";
+                static char confirm[PATH_MAX];
+                sprintf(confirm, "Yes - %s Safe System (DANGEROUS! NO BACKUP/RESTORE)", !safemode ? "Enable" : "Disable");
+                if (confirm_selection(confirm_install, confirm)) quick_toggle_safe_mode();
+                break;
+            }
         }
     }
+}
+
+void quick_toggle_safe_mode() {
+    char cmd[256];
+    safemode = get_safe_mode();
+    if (!safemode) {
+        /* 4. touch SAFE_SYSTEM_FILE */
+        sprintf(cmd, "touch %s", SAFE_SYSTEM_FILE);
+        ui_print("\n%s\n", cmd);
+        __system(cmd);
+    } else {
+        /* 4. rm SAFE_SYSTEM_FILE */
+        sprintf(cmd, "rm %s", SAFE_SYSTEM_FILE);
+        ui_print("\n%s\n", cmd);
+        __system(cmd);
+    }
+    safemode = get_safe_mode();
+    ui_print("Safe System is now: %s!\n", safemode ? "ENABLED" : "DISABLED");
 }
 
 void toggle_safe_mode() {
     struct statfs info;
     char cmd[256];
 
+    safemode = get_safe_mode();
     char orig_backup_path[PATH_MAX];
     sprintf(orig_backup_path, "/emmc/%s/orig", EXPAND(RECOVERY_FOLDER));
     char safe_backup_path[PATH_MAX];
@@ -165,6 +193,7 @@ void toggle_safe_mode() {
 
         /* 4. touch SAFE_SYSTEM_FILE */
         sprintf(cmd, "touch %s", SAFE_SYSTEM_FILE);
+        ui_print("\n%s\n", cmd);
         __system(cmd);
 
         ui_set_progress(1);
@@ -204,6 +233,7 @@ void toggle_safe_mode() {
 
         /* 4. rm SAFE_SYSTEM_FILE */
         sprintf(cmd, "rm %s", SAFE_SYSTEM_FILE);
+        ui_print("\n%s\n", cmd);
         __system(cmd);
 
         ui_set_progress(1);
