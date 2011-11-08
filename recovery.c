@@ -505,6 +505,7 @@ get_menu_selection(char** headers, char** items, int menu_only,
             chosen_item = action;
         }
 
+/* removing for now :: too confusing for users.
         if (abs(selected - old_selected) > 1) {
             wrap_count++;
             if (wrap_count == 3) {
@@ -519,6 +520,7 @@ get_menu_selection(char** headers, char** items, int menu_only,
                 }
             }
         }
+*/
     }
 
     ui_end_menu();
