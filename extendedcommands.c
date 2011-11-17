@@ -890,15 +890,15 @@ void show_nandroid_advanced_restore_menu(const char* path)
                                 NULL
     };
 
-    static char* list[] = { "Restore boot",
-                            "Restore system",
-                            "Restore data",
-                            "Restore cache",
-                            "Restore sd-ext",
-                            "Restore wimax",
-                            "Restore webtop",
-                            "Restore original system",
-                            NULL
+    char* list[] = { "Restore boot",
+        "Restore system",
+        "Restore data",
+        "Restore cache",
+        "Restore sd-ext",
+        "Restore wimax",
+        "Restore webtop",
+        "Restore original system",
+        NULL
     };
 
     int num_menu_items = 8;

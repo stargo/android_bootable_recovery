@@ -165,25 +165,25 @@ void toggle_safe_mode() {
         __system(cmd);
 
         /* 1. make a backup of the existing /data + /cache in /emmc/safestrap/orig/ */
-        ui_print("\n-- Backing up Original System...\n");
+        ui_print("\n-- Backing up Original Data...\n");
 
         sprintf(cmd, "rm %s/*", orig_backup_path);
         __system(cmd);
-        if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/system"))) return;
-        ui_set_progress(0.15);
+        // if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/system"))) return;
+        // ui_set_progress(0.15);
         if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/data"))) return;
-        ui_set_progress(0.30);
-        if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/cache"))) return;
-        ui_set_progress(0.45);
+        ui_set_progress(0.40);
+        // if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/cache"))) return;
+        // ui_set_progress(0.45);
 
-        ui_print("\n-- Restoring Safe System...\n");
+        ui_print("\n-- Restoring Safe System Data...\n");
 
-        if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/system"))) return;
-        ui_set_progress(0.60);
+        // if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/system"))) return;
+        // ui_set_progress(0.60);
         if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/data"))) return;
-        ui_set_progress(0.75);
-        if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/cache"))) return;
-        ui_set_progress(0.90);
+        ui_set_progress(0.80);
+        // if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/cache"))) return;
+        // ui_set_progress(0.90);
 
         /* 3. wipe Dalvik Cache */
         __system("rm -r /data/dalvik-cache");
@@ -209,21 +209,21 @@ void toggle_safe_mode() {
 
         sprintf(cmd, "rm %s/*", safe_backup_path);
         __system(cmd);
-        if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/system"))) return;
-        ui_set_progress(0.15);
+        // if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/system"))) return;
+        // ui_set_progress(0.15);
         if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/data"))) return;
-        ui_set_progress(0.30);
-        if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/cache"))) return;
-        ui_set_progress(0.45);
+        ui_set_progress(0.40);
+        // if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/cache"))) return;
+        // ui_set_progress(0.45);
 
         ui_print("\n-- Restoring Original System...\n");
 
-        if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/system"))) return;
-        ui_set_progress(0.60);
+        // if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/system"))) return;
+        // ui_set_progress(0.60);
         if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/data"))) return;
-        ui_set_progress(0.75);
-        if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/cache"))) return;
-        ui_set_progress(0.90);
+        ui_set_progress(0.80);
+        // if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/cache"))) return;
+        // ui_set_progress(0.90);
 
         /* 3. wipe Dalvik Cache */
         __system("rm -r /data/dalvik-cache");
