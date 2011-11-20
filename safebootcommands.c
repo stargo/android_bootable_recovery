@@ -172,7 +172,7 @@ void toggle_safe_mode() {
         // if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/system"))) return;
         // ui_set_progress(0.15);
         if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/data"))) return;
-        ui_set_progress(0.40);
+        // ui_set_progress(0.40);
         // if (0 != (ret = nandroid_backup_partition(orig_backup_path, "/cache"))) return;
         // ui_set_progress(0.45);
 
@@ -181,7 +181,7 @@ void toggle_safe_mode() {
         // if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/system"))) return;
         // ui_set_progress(0.60);
         if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/data"))) return;
-        ui_set_progress(0.80);
+        // ui_set_progress(0.80);
         // if (0 != (ret = nandroid_restore_partition(safe_backup_path, "/cache"))) return;
         // ui_set_progress(0.90);
 
@@ -189,14 +189,14 @@ void toggle_safe_mode() {
         __system("rm -r /data/dalvik-cache");
         __system("rm -r /cache/dalvik-cache");
         __system("rm -r /sd-ext/dalvik-cache");
-        ui_set_progress(0.95);
+        // ui_set_progress(0.95);
 
         /* 4. touch SAFE_SYSTEM_FILE */
         sprintf(cmd, "touch %s", SAFE_SYSTEM_FILE);
         ui_print("\n%s\n", cmd);
         __system(cmd);
 
-        ui_set_progress(1);
+        // ui_set_progress(1);
         ui_print("Swap to Safe System Complete.\n");
 
     } else {
@@ -212,7 +212,7 @@ void toggle_safe_mode() {
         // if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/system"))) return;
         // ui_set_progress(0.15);
         if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/data"))) return;
-        ui_set_progress(0.40);
+        // ui_set_progress(0.40);
         // if (0 != (ret = nandroid_backup_partition(safe_backup_path, "/cache"))) return;
         // ui_set_progress(0.45);
 
@@ -221,7 +221,7 @@ void toggle_safe_mode() {
         // if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/system"))) return;
         // ui_set_progress(0.60);
         if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/data"))) return;
-        ui_set_progress(0.80);
+        // ui_set_progress(0.80);
         // if (0 != (ret = nandroid_restore_partition(orig_backup_path, "/cache"))) return;
         // ui_set_progress(0.90);
 
@@ -229,14 +229,14 @@ void toggle_safe_mode() {
         __system("rm -r /data/dalvik-cache");
         __system("rm -r /cache/dalvik-cache");
         __system("rm -r /sd-ext/dalvik-cache");
-        ui_set_progress(0.95);
+        // ui_set_progress(0.95);
 
         /* 4. rm SAFE_SYSTEM_FILE */
         sprintf(cmd, "rm %s", SAFE_SYSTEM_FILE);
         ui_print("\n%s\n", cmd);
         __system(cmd);
 
-        ui_set_progress(1);
+        // ui_set_progress(1);
         ui_print("Swap to Original System Complete.\n");
     }
     sync();

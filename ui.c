@@ -300,8 +300,7 @@ static void *progress_thread(void *cookie)
         // update the installation animation, if active
         // skip this if we have a text overlay (too expensive to update)
         if (gCurrentIcon == BACKGROUND_ICON_INSTALLING &&
-            ui_parameters.installing_frames > 0 &&
-            !show_text) {
+            ui_parameters.installing_frames > 0) {
             gInstallingFrame =
                 (gInstallingFrame + 1) % ui_parameters.installing_frames;
             redraw = 1;
