@@ -1133,6 +1133,7 @@ void show_advanced_menu()
                             "Report Error",
                             "Key Test",
                             "Show log",
+                            "Disable Safestrap (if stuck in recovery)",
 #ifndef BOARD_HAS_SMALL_RECOVERY
                             "Partition SD Card",
                             "Fix Permissions",
@@ -1203,6 +1204,14 @@ void show_advanced_menu()
             }
             case 6:
             {
+                static char* confirm_install  = "Confirm Disable Safestrap?";
+                static char confirm[PATH_MAX];
+                sprintf(confirm, "Yes - Disable Safestrap");
+                if (confirm_selection(confirm_install, confirm)) disable_safestrap();
+                break;
+            }
+            case 7:
+            {
                 static char* ext_sizes[] = { "128M",
                                              "256M",
                                              "512M",
@@ -1244,7 +1253,7 @@ void show_advanced_menu()
                     ui_print("An error occured while partitioning your SD Card. Please see /tmp/recovery.log for more details.\n");
                 break;
             }
-            case 7:
+            case 8:
             {
                 ensure_path_mounted("/system");
                 ensure_path_mounted("/data");
@@ -1253,7 +1262,7 @@ void show_advanced_menu()
                 ui_print("Done!\n");
                 break;
             }
-            case 8:
+            case 9:
             {
                 static char* ext_sizes[] = { "128M",
                                              "256M",

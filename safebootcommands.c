@@ -154,7 +154,7 @@ void toggle_safe_mode() {
     uint64_t sdcard_free = bavail * bsize;
     uint64_t sdcard_free_mb = sdcard_free / (uint64_t)(1024 * 1024);
     ui_print("Emmc space free: %lluMB\n", sdcard_free_mb);
-    if (sdcard_free_mb < 1024)
+    if (sdcard_free_mb < 2048)
         ui_print("There may not be enough free space to complete backup... continuing...\n");
 
     ui_set_background(BACKGROUND_ICON_INSTALLING);
@@ -247,3 +247,15 @@ void toggle_safe_mode() {
     ui_print("Safe System is now: %s!\n", safemode ? "ENABLED" : "DISABLED");
 }
 
+
+void disable_safestrap() {
+    safemode = get_safe_mode();
+    if (__system("[ -f /systemorig/bin/logwrapper.bin ]") == 0) {
+        __system("rm /systemorig/bin/logwrapper");
+        __system("mv /systemorig/bin/logwrapper.bin /systemorig/bin/logwrapper");
+        ui_print("Safestrap disabled.  Use Safestrap.APK to reinstall.\n");
+    }
+    else {
+        ui_print("'logwrapper.bin' not found.  Won't delete original.\n");
+    }
+}
