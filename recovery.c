@@ -21,22 +21,25 @@
 #include <getopt.h>
 #include <limits.h>
 #include <linux/input.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/reboot.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <sys/stat.h>
+#include <signal.h>
 
 #include "bootloader.h"
+#include "firmware.h"
 #include "common.h"
 #include "cutils/properties.h"
 #include "install.h"
-#include "minui/minui.h"
+#include <minui/minui.h>
 #include "minzip/DirUtil.h"
 #include "roots.h"
 #include "recovery_ui.h"
@@ -46,6 +49,8 @@
 #include "flashutils/flashutils.h"
 
 #include "safebootcommands.h"
+
+#include "console.h"
 
 static const struct option OPTIONS[] = {
   { "send_intent", required_argument, NULL, 's' },
@@ -473,7 +478,7 @@ get_menu_selection(char** headers, char** items, int menu_only,
         int key = ui_wait_key();
         int visible = ui_text_visible();
 
-        int action = device_handle_key(key, visible);
+        int action = device_handle_key(key /*, visible*/);
 
         int old_selected = selected;
 
@@ -777,6 +782,11 @@ prompt_and_wait() {
                 show_safe_boot_menu();
                 safemode = get_safe_mode();
                 break;
+#ifdef OPEN_RECOVERY_HAVE_CONSOLE
+            case ITEM_CONSOLE:
+		show_console_menu();
+            	break;
+#endif
             case ITEM_POWEROFF:
                 poweroff=1;
                 return;

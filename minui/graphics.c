@@ -29,13 +29,9 @@
 
 #include <pixelflinger/pixelflinger.h>
 
-#ifndef BOARD_LDPI_RECOVERY
-	#include "font_10x18.h"
-#else
-	#include "font_7x16.h"
-#endif
-
+#include "font_10x18.h"
 #include "minui.h"
+#include <cutils/memory.h>
 
 typedef struct {
     GGLSurface texture;
@@ -45,6 +41,7 @@ typedef struct {
 } GRFont;
 
 static GRFont *gr_font = 0;
+static GRFont *gr_font_l = 0;
 static GGLContext *gr_context = 0;
 static GGLSurface gr_font_texture;
 static GGLSurface gr_framebuffer[2];
@@ -55,11 +52,11 @@ static int gr_fb_fd = -1;
 static int gr_vt_fd = -1;
 
 static struct fb_var_screeninfo vi;
+static struct fb_fix_screeninfo fi;
 
 static int get_framebuffer(GGLSurface *fb)
 {
     int fd;
-    struct fb_fix_screeninfo fi;
     void *bits;
 
     fd = open("/dev/graphics/fb0", O_RDWR);
@@ -90,30 +87,19 @@ static int get_framebuffer(GGLSurface *fb)
     fb->version = sizeof(*fb);
     fb->width = vi.xres;
     fb->height = vi.yres;
-#ifdef BOARD_HAS_JANKY_BACKBUFFER
-    fb->stride = fi.line_length/2;
-#else
-    fb->stride = vi.xres;
-#endif
+    fb->stride = fi.line_length / (vi.bits_per_pixel / 8);
     fb->data = bits;
     fb->format = GGL_PIXEL_FORMAT_RGB_565;
-    memset(fb->data, 0, vi.yres * vi.xres * 2);
-
+    
     fb++;
 
     fb->version = sizeof(*fb);
     fb->width = vi.xres;
     fb->height = vi.yres;
-#ifdef BOARD_HAS_JANKY_BACKBUFFER
-    fb->stride = fi.line_length/2;
-    fb->data = (void*) (((unsigned) bits) + vi.yres * fi.line_length);
-#else
-    fb->stride = vi.xres;
-    fb->data = (void*) (((unsigned) bits) + vi.yres * vi.xres * 2);
-#endif
+    fb->stride = fi.line_length / (vi.bits_per_pixel / 8);
+    fb->data = (void*) (((unsigned) bits) + (vi.yres * fi.line_length));
     fb->format = GGL_PIXEL_FORMAT_RGB_565;
-    memset(fb->data, 0, vi.yres * vi.xres * 2);
-
+    
     return fd;
 }
 
@@ -121,8 +107,8 @@ static void get_memory_surface(GGLSurface* ms) {
   ms->version = sizeof(*ms);
   ms->width = vi.xres;
   ms->height = vi.yres;
-  ms->stride = vi.xres;
-  ms->data = malloc(vi.xres * vi.yres * 2);
+  ms->stride = fi.line_length / (vi.bits_per_pixel / 8);
+  ms->data = malloc(fi.line_length * vi.yres);
   ms->format = GGL_PIXEL_FORMAT_RGB_565;
 }
 
@@ -131,9 +117,27 @@ static void set_active_framebuffer(unsigned n)
     if (n > 1) return;
     vi.yres_virtual = vi.yres * 2;
     vi.yoffset = n * vi.yres;
-    vi.bits_per_pixel = 16;
     if (ioctl(gr_fb_fd, FBIOPUT_VSCREENINFO, &vi) < 0) {
         perror("active fb swap failed");
+    }
+}
+
+void gr_flip_32(unsigned *bits, unsigned short *ptr, unsigned count)
+{
+   unsigned i=0;
+   while (i<count) {
+        uint32_t rgb32, red, green, blue, alpha;
+
+        /* convert 16 bits to 32 bits */
+        rgb32 = ptr[i];
+        red = (rgb32 & 0x1f) << 3; // shift left 3 for full precision
+        green = (rgb32 & 0x7E0) << 5; // shift right 5 to align, shift left 2 for full precision, shift left 8 for rgb
+        blue = (rgb32 & 0xF800) << 8; // shift right 11 to aligh, shift left 3 for full precision, left 16 for rgb 
+
+        rgb32 = 0xFF000000 | red | green | blue;
+        android_memset32((uint32_t *)bits, rgb32, 4);
+        i++;
+        bits++;
     }
 }
 
@@ -144,21 +148,19 @@ void gr_flip(void)
     /* swap front and back buffers */
     gr_active_fb = (gr_active_fb + 1) & 1;
 
-#ifdef BOARD_HAS_FLIPPED_SCREEN
-    /* flip buffer 180 degrees for devices with physicaly inverted screens */
-    unsigned int i;
-    for (i = 1; i < (vi.xres * vi.yres); i++) {
-        unsigned short tmp = gr_mem_surface.data[i];
-        gr_mem_surface.data[i] = gr_mem_surface.data[(vi.xres * vi.yres * 2) - i];
-        gr_mem_surface.data[(vi.xres * vi.yres * 2) - i] = tmp;
-    }
-#endif
-
     /* copy data from the in-memory surface to the buffer we're about
      * to make active. */
+    if( vi.bits_per_pixel == 16)
+    {
     memcpy(gr_framebuffer[gr_active_fb].data, gr_mem_surface.data,
-           vi.xres * vi.yres * 2);
-
+           fi.line_length * vi.yres);
+    }
+    else
+    {
+        gr_flip_32((unsigned *)gr_framebuffer[gr_active_fb].data, \
+                   (unsigned short *)gr_mem_surface.data, \
+                   ((fi.line_length / (vi.bits_per_pixel / 8)) * vi.yres));
+    }
     /* inform the display driver */
     set_active_framebuffer(gr_active_fb);
 }
@@ -205,11 +207,52 @@ int gr_text(int x, int y, const char *s)
     return x;
 }
 
+int gr_text_l(int x, int y, const char *s)
+{
+	GGLContext *gl = gr_context;
+	GRFont *font = gr_font_l;
+	unsigned off;
+
+	y -= font->ascent;
+
+	gl->bindTexture(gl, &font->texture);
+	gl->texEnvi(gl, GGL_TEXTURE_ENV, GGL_TEXTURE_ENV_MODE, GGL_REPLACE);
+	gl->texGeni(gl, GGL_S, GGL_TEXTURE_GEN_MODE, GGL_ONE_TO_ONE);
+	gl->texGeni(gl, GGL_T, GGL_TEXTURE_GEN_MODE, GGL_ONE_TO_ONE);
+	gl->enable(gl, GGL_TEXTURE_2D);
+	
+	while((off = *s++)) 
+	{
+		off -= 32;
+		if (off < 96) 
+		{
+		  gl->texCoord2i(gl, 0 - (gr_fb_width() - y), (off * font->cwidth) - x + 1);
+		  gl->recti(gl, gr_fb_width() - y - font->cheight, x, gr_fb_width() - 1 - y, x + font->cwidth);
+		}
+		x += font->cwidth;
+	}
+
+	return x;
+}
+
 void gr_fill(int x, int y, int w, int h)
 {
     GGLContext *gl = gr_context;
     gl->disable(gl, GGL_TEXTURE_2D);
     gl->recti(gl, x, y, w, h);
+}
+
+void gr_fill_l(int x, int y, int w, int h)
+{
+    GGLContext *gl = gr_context;
+    gl->disable(gl, GGL_TEXTURE_2D);
+    gl->recti(gl, gr_fb_width() - h, x, gr_fb_width() - y, w);
+}
+
+void gr_clear()
+{
+    gr_color(0,0,0,255);
+    gr_fill(0,0, gr_fb_width(), gr_fb_height());
 }
 
 void gr_blit(gr_surface source, int sx, int sy, int w, int h, int dx, int dy) {
@@ -243,14 +286,16 @@ unsigned int gr_get_height(gr_surface surface) {
 
 static void gr_init_font(void)
 {
-    GGLSurface *ftex;
-    unsigned char *bits, *rle;
+    GGLSurface *ftex, *ftex_l;
+    unsigned char *bits, *bits_l, *load_data, *rle;
     unsigned char *in, data;
 
+		//portrait
     gr_font = calloc(sizeof(*gr_font), 1);
     ftex = &gr_font->texture;
 
     bits = malloc(font.width * font.height);
+		load_data = bits;
 
     ftex->version = sizeof(*ftex);
     ftex->width = font.width;
@@ -258,16 +303,39 @@ static void gr_init_font(void)
     ftex->stride = font.width;
     ftex->data = (void*) bits;
     ftex->format = GGL_PIXEL_FORMAT_A_8;
+		
+		//landscape
+		gr_font_l = calloc(sizeof(*gr_font_l), 1);
+    ftex_l = &gr_font_l->texture;
+    
+		bits_l = malloc(font.width * font.height);
+
+    ftex_l->version = sizeof(*ftex);
+    ftex_l->width = font.height;
+    ftex_l->height = font.width;
+    ftex_l->stride = font.height;
+    ftex_l->data = (void*) bits_l;
+    ftex_l->format = GGL_PIXEL_FORMAT_A_8;
 
     in = font.rundata;
     while((data = *in++)) {
-        memset(bits, (data & 0x80) ? 255 : 0, data & 0x7f);
-        bits += (data & 0x7f);
+        memset(load_data, (data & 0x80) ? 255 : 0, data & 0x7f);
+        load_data += (data & 0x7f);
     }
+
+		//landscape transformation
+		unsigned int i,j;
+		for (i = 0; i < font.height; i++)
+			for (j = 0; j < font.width; j++)
+				bits_l[j * font.height + i] = bits[(font.height - 1 - i) * font.width + j];
 
     gr_font->cwidth = font.cwidth;
     gr_font->cheight = font.cheight;
     gr_font->ascent = font.cheight - 2;
+    
+    gr_font_l->cwidth = font.cwidth;
+    gr_font_l->cheight = font.cheight;
+    gr_font_l->ascent = font.cheight - 2;
 }
 
 int gr_init(void)

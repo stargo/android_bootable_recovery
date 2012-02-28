@@ -17,18 +17,30 @@
 #ifndef RECOVERY_COMMON_H
 #define RECOVERY_COMMON_H
 
+#define PHONE_SHELL "/sbin/bash"
+
 #include <stdio.h>
 
 // Initialize the graphics system.
 void ui_init();
 
 // Use KEY_* codes from <linux/input.h> or KEY_DREAM_* from "minui/minui.h".
+int ui_get_key();                                                       // returns keycode if a key event is pending
 int ui_wait_key();            // waits for a key/button press, returns the code
 int ui_key_pressed(int key);  // returns >0 if the code is currently pressed
 int ui_text_visible();        // returns >0 if text log is currently visible
 int ui_text_ever_visible();   // returns >0 if text log was ever visible
 void ui_show_text(int visible);
 void ui_clear_key_queue();
+
+// Check for USB
+static int usb_connected();
+
+// LEDs
+void ui_led_toggle(int state);
+void ui_led_blink(int continuously);
+static void led_off(FILE* ledfp_r, FILE* ledfp_g, FILE* ledfp_b);
+static void led_on(FILE* ledfp_r, FILE* ledfp_g, FILE* ledfp_b);
 
 // Write a message to the on-screen log shown with Alt-L (also to stderr).
 // The screen is small, and users may need to report these messages to support,
@@ -142,5 +154,60 @@ typedef struct {
 
 // fopen a file, mounting volumes and making parent dirs as necessary.
 FILE* fopen_path(const char *path, const char *mode);
+
+/****************************************************************************************
+ * Console functions
+ ***************************************************************************************/
+
+//shows the console
+void ui_console_begin();
+
+//ends the console
+void ui_console_end();
+
+//prevents the console from redrawing until the end update is called
+void ui_console_begin_update();
+
+//ends the update and refreshes the screen
+void ui_console_end_update();
+
+//returns the number of rows on the console
+int ui_console_get_num_rows();
+
+//returns the number of columns on the console
+int ui_console_get_num_columns();
+
+//returns console width in pixels
+int ui_console_get_width();
+
+//returns console height in pixels
+int ui_console_get_height();
+
+//scrolls up in the console
+void ui_console_scroll_up(int num_rows);
+
+//scrolls down in the console
+void ui_console_scroll_down(int num_rows);
+
+enum {
+  CONSOLE_HEADER_COLOR,
+  CONSOLE_DEFAULT_BACKGROUND_COLOR,
+  CONSOLE_DEFAULT_FRONT_COLOR
+};
+
+//get system console color
+void ui_console_get_system_front_color(int which, unsigned char* r, unsigned char* g, unsigned char* b);
+
+//set system console color
+void ui_console_set_system_front_color(int which);
+
+//gets the current console color
+void ui_console_get_front_color(unsigned char* r, unsigned char* g, unsigned char* b);
+
+//sets the current console color
+void ui_console_set_front_color(unsigned char r, unsigned char g, unsigned char b);
+
+//prints to console
+void ui_console_print(const char *text);
 
 #endif  // RECOVERY_COMMON_H

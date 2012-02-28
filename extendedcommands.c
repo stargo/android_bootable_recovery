@@ -1191,7 +1191,7 @@ void show_advanced_menu()
                 do
                 {
                     key = ui_wait_key();
-                    action = device_handle_key(key, 1);
+                    action = device_handle_key(key);
                     ui_print("Key: %d\n", key);
                 }
                 while (action != GO_BACK);
