@@ -81,12 +81,12 @@ int device_wipe_data();
 #define ITEM_PARTITION       6
 #define ITEM_ADVANCED        7
 #define ITEM_SAFEBOOT        8
-#ifdef OPEN_RECOVERY_HAVE_CONSOLE
+/* CONSOLE */
+#if 0
 #define ITEM_CONSOLE         9
 #define ITEM_POWEROFF	     10
-#else
-#define ITEM_POWEROFF	     9
 #endif
+#define ITEM_POWEROFF	     9
 
 // Header text to display above the main menu.
 extern char* MENU_HEADERS[];

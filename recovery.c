@@ -782,7 +782,8 @@ prompt_and_wait() {
                 show_safe_boot_menu();
                 safemode = get_safe_mode();
                 break;
-#ifdef OPEN_RECOVERY_HAVE_CONSOLE
+/* CONSOLE */
+#if 0
             case ITEM_CONSOLE:
 		show_console_menu();
             	break;

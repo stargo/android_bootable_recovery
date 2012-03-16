@@ -159,7 +159,7 @@ static int gPagesIdentical = 0;
 static color32 background_color = {.r = 0, .g = 0, .b = 0, .a = 160 };
 static color32 title_color = {.r = 60, .g = 255, .b = 110, .a = 255};
 static color32 menu_color = {.r = 60, .g = 255, .b = 110, .a = 255};
-static color32 menu_sel_color = {.r = 255, .g = 255, .b = 255, .a = 255};
+static color32 menu_sel_color = {.r = 0, .g = 0, .b = 0, .a = 255};
 static color32 script_color = {.r = 255, .g = 255, .b = 0, .a = 255};
 
 // Log text overlay, displayed when a magic key is pressed

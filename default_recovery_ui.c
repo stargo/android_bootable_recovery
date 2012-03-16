@@ -31,7 +31,8 @@ char* MENU_ITEMS[] = { "reboot system now",
                        "mounts and storage",
                        "advanced",
                        "safe boot menu",
-#ifdef OPEN_RECOVERY_HAVE_CONSOLE
+/* CONSOLE */
+#if 0
                        "console",
 #endif
 		       "power off",
@@ -59,11 +60,6 @@ int device_handle_key(int key_code) {
             case KEY_VOLUMEUP:
             case KEY_HOME:
                 return HIGHLIGHT_UP;
-
-            case KEY_POWER:
-                if (ui_get_showing_back_button()) {
-                    return SELECT_ITEM;
-                }
                 
             case KEY_LEFTBRACE:
             case KEY_ENTER:
@@ -71,15 +67,12 @@ int device_handle_key(int key_code) {
             case KEY_CENTER:
             case KEY_CAMERA:
             case KEY_F21:
-            case KEY_SEND:
-                return SELECT_ITEM;
-            
-            case KEY_END:
             case KEY_BACKSPACE:
+            case KEY_SEND:
+            case KEY_END:
+            case KEY_POWER:
             case KEY_SEARCH:
-                if (ui_get_showing_back_button()) {
-                    return SELECT_ITEM;
-                }
+                return SELECT_ITEM;
                 
             case KEY_BACK:
                 return GO_BACK;
