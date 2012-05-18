@@ -44,6 +44,7 @@
 #include "extendedcommands.h"
 #include "flashutils/flashutils.h"
 
+#include "safebootcommands.h"
 static const struct option OPTIONS[] = {
   { "send_intent", required_argument, NULL, 's' },
   { "update_package", required_argument, NULL, 'u' },
@@ -403,10 +404,14 @@ copy_sideloaded_package(const char* original_path) {
 }
 
 static char**
-prepend_title(char** headers) {
+prepend_title(const char** headers) {
+    char tmp[PATH_MAX];
+    sprintf(tmp, "Safe System is: %s", safemode ? "ENABLED" : "DISABLED");
     char* title[] = { EXPAND(RECOVERY_VERSION),
+                      ""
                       "",
                       NULL };
+    title[1] = strdup(tmp);
 
     // count the number of lines in our title, plus the
     // caller-provided headers.
@@ -489,6 +494,7 @@ get_menu_selection(char** headers, char** items, int menu_only,
             chosen_item = action;
         }
 
+/* removing for now :: too confusing for users.
         if (abs(selected - old_selected) > 1) {
             wrap_count++;
             if (wrap_count == 3) {
@@ -503,6 +509,7 @@ get_menu_selection(char** headers, char** items, int menu_only,
                 }
             }
         }
+*/
     }
 
     ui_end_menu();
@@ -687,9 +694,11 @@ wipe_data(int confirm) {
 
 static void
 prompt_and_wait() {
-    char** headers = prepend_title((const char**)MENU_HEADERS);
+    safemode = get_safe_mode();
+    char** headers = NULL;
 
     for (;;) {
+        headers = prepend_title((const char**)MENU_HEADERS);
         finish_recovery(NULL);
         ui_reset_progress();
         
@@ -725,7 +734,12 @@ prompt_and_wait() {
                 break;
 
             case ITEM_APPLY_SDCARD:
-                show_install_update_menu();
+                if (get_safe_mode() == 0) {
+                    ui_print(".zip install is only available while Safe System is enabled.\n");
+                } else {
+                    show_install_update_menu();
+                    safemode = get_safe_mode();
+                }
                 break;
 
             case ITEM_NANDROID:
@@ -738,6 +752,10 @@ prompt_and_wait() {
 
             case ITEM_ADVANCED:
                 show_advanced_menu();
+                break;
+            case ITEM_SAFEBOOT:
+                show_safe_boot_menu();
+                safemode = get_safe_mode();
                 break;
                 
             case ITEM_POWEROFF:

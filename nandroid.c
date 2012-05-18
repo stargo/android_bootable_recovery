@@ -38,11 +38,12 @@
 #include "extendedcommands.h"
 #include "nandroid.h"
 #include "mounts.h"
+#include "safebootcommands.h"
 
 #include "flashutils/flashutils.h"
 #include <libgen.h>
 
-void nandroid_generate_timestamp_path(const char* backup_path)
+void nandroid_generate_timestamp_path(const char* backup_path, const char* sdcard_path)
 {
     time_t t = time(NULL);
     struct tm *tmp = localtime(&t);
@@ -50,11 +51,13 @@ void nandroid_generate_timestamp_path(const char* backup_path)
     {
         struct timeval tp;
         gettimeofday(&tp, NULL);
-        sprintf(backup_path, "/sdcard/clockworkmod/backup/%d", tp.tv_sec);
+        sprintf(backup_path, "%s/%s/backup/%s-%d", sdcard_path, EXPAND(RECOVERY_FOLDER), safemode==0 ? "nonsafe" : "safe", tp.tv_sec);
     }
     else
     {
-        strftime(backup_path, PATH_MAX, "/sdcard/clockworkmod/backup/%F.%H.%M.%S", tmp);
+        char tmp_path[PATH_MAX];
+        strftime(tmp_path, PATH_MAX, "%F.%H.%M.%S", tmp);
+        sprintf(backup_path, "%s/%s/backup/%s-%s", sdcard_path, EXPAND(RECOVERY_FOLDER), safemode==0 ? "nonsafe" : "safe", tmp_path);
     }
 }
 
@@ -165,7 +168,7 @@ int nandroid_backup_partition_extended(const char* backup_path, const char* moun
     char* name = basename(mount_point);
 
     struct stat file_info;
-    int callback = stat("/sdcard/clockworkmod/.hidenandroidprogress", &file_info) != 0;
+    int callback = 0; /* disable detailed progress bar */
     
     ui_print("Backing up %s...\n", name);
     if (0 != (ret = ensure_path_mounted(mount_point) != 0)) {
@@ -224,8 +227,7 @@ int nandroid_backup_partition(const char* backup_path, const char* root) {
     return nandroid_backup_partition_extended(backup_path, root, 1);
 }
 
-int nandroid_backup(const char* backup_path)
-{
+int nandroid_backup(const char* backup_path, const char* sdcard_path, int skip_webtop, int skip_origsys) {
     ui_set_background(BACKGROUND_ICON_INSTALLING);
     
     if (ensure_path_mounted(backup_path) != 0) {
@@ -233,34 +235,31 @@ int nandroid_backup(const char* backup_path)
     }
     
     Volume* volume = volume_for_path(backup_path);
-    if (NULL == volume) {
-      if (strstr(backup_path, "/sdcard") == backup_path && is_data_media())
-          volume = volume_for_path("/data");
-      else
-          return print_and_error("Unable to find volume for backup path.\n");
-    }
+    if (NULL == volume)
+        return print_and_error("Unable to find volume for backup path.\n");
     int ret;
+    int sdcard_error = 0;
     struct statfs s;
-    if (NULL != volume) {
-        if (0 != (ret = statfs(volume->mount_point, &s)))
-            return print_and_error("Unable to stat backup path.\n");
-        uint64_t bavail = s.f_bavail;
-        uint64_t bsize = s.f_bsize;
-        uint64_t sdcard_free = bavail * bsize;
-        uint64_t sdcard_free_mb = sdcard_free / (uint64_t)(1024 * 1024);
-        ui_print("SD Card space free: %lluMB\n", sdcard_free_mb);
-        if (sdcard_free_mb < 150)
-            ui_print("There may not be enough free space to complete backup... continuing...\n");
-    }
+    if (0 != (ret = statfs(volume->mount_point, &s)))
+        return print_and_error("Unable to stat backup path.\n");
+    uint64_t bavail = s.f_bavail;
+    uint64_t bsize = s.f_bsize;
+    uint64_t sdcard_free = bavail * bsize;
+    uint64_t sdcard_free_mb = sdcard_free / (uint64_t)(1024 * 1024);
+    ui_print("SD Card space free: %lluMB\n", sdcard_free_mb);
+    if ((skip_webtop && (sdcard_free_mb < 500)) || (!skip_webtop && (sdcard_free_mb < 1500)))
+        ui_print("There may not be enough free space to complete backup... continuing...\n");
     char tmp[PATH_MAX];
     sprintf(tmp, "mkdir -p %s", backup_path);
     __system(tmp);
 
-    if (0 != (ret = nandroid_backup_partition(backup_path, "/boot")))
+#ifndef BOARD_HAS_LOCKED_BOOTLOADER
+    if  (0 != (ret = nandroid_backup_partition(backup_path, "/boot")))
         return ret;
 
     if (0 != (ret = nandroid_backup_partition(backup_path, "/recovery")))
         return ret;
+#endif
 
     Volume *vol = volume_for_path("/wimax");
     if (vol != NULL && 0 == stat(vol->device, &s))
@@ -275,6 +274,10 @@ int nandroid_backup(const char* backup_path)
             return print_and_error("Error while dumping WiMAX image!\n");
     }
 
+    /* backup original system */
+    if (skip_origsys == 0 && (0 != (ret = nandroid_backup_partition(backup_path, "/systemorig"))))
+        return ret;
+
     if (0 != (ret = nandroid_backup_partition(backup_path, "/system")))
         return ret;
 
@@ -286,31 +289,61 @@ int nandroid_backup(const char* backup_path)
             return ret;
     }
 
-    if (0 != stat("/sdcard/.android_secure", &s))
+    if (0 != ensure_path_mounted("/sdcard"))
     {
-        ui_print("No /sdcard/.android_secure found. Skipping backup of applications on external storage.\n");
+        ui_print("Could not mount /sdcard. Skipping backup of /sdcard.\n");
+        sdcard_error = 1;
     }
     else
     {
-        if (0 != (ret = nandroid_backup_partition_extended(backup_path, "/sdcard/.android_secure", 0)))
-            return ret;
+        if (0 != stat("/sdcard/.android_secure", &s)) {
+            ui_print("No /sdcard/.android_secure found. Skipping backup of applications on external storage.\n");
+        } else {
+            if (0 != (ret = nandroid_backup_partition_extended(backup_path, "/sdcard/.android_secure", 0)))
+                return ret;
+        }
     }
+
+#ifdef BOARD_HAS_SDCARD_INTERNAL
+    if (sdcard_error)
+    {
+        if (0 == ensure_path_mounted("/emmc"))
+            if (0 == stat("/emmc/.android_secure", &s))
+                if (0 != (ret = nandroid_backup_partition_extended(backup_path, "/emmc/.android_secure", 0)))
+                    return ret;
+    }
+#endif
 
     if (0 != (ret = nandroid_backup_partition_extended(backup_path, "/cache", 0)))
         return ret;
 
+#ifdef BOARD_HAS_SDEXT
     vol = volume_for_path("/sd-ext");
-    if (vol == NULL || 0 != stat(vol->device, &s))
+#ifdef BOARD_HAS_WEBTOP
+    if (vol == NULL || 0 != statfs(vol->device, &s) || skip_webtop)
+#else
+    if (vol == NULL || 0 != statfs(vol->device, &s))
+#endif
     {
         ui_print("No sd-ext found. Skipping backup of sd-ext.\n");
-    }
-    else
-    {
+    } else {
         if (0 != ensure_path_mounted("/sd-ext"))
             ui_print("Could not mount sd-ext. sd-ext backup may not be supported on this device. Skipping backup of sd-ext.\n");
         else if (0 != (ret = nandroid_backup_partition(backup_path, "/sd-ext")))
             return ret;
     }
+#endif
+
+#ifdef BOARD_HAS_WEBTOP
+    vol = volume_for_path("/osh");
+    if (vol != NULL && 0 == stat(vol->device, &s) && !skip_webtop)
+    {
+        if (0 != ensure_path_mounted("/osh"))
+            ui_print("Could not mount webtop. Webtop backup may not be supported on this device. Skipping backup of webtop.\n");
+        else if (0 != (ret = nandroid_backup_partition(backup_path, "/osh")))
+            return ret;
+    }
+#endif
 
     ui_print("Generating md5 sum...\n");
     sprintf(tmp, "nandroid-md5.sh %s", backup_path);
@@ -457,7 +490,7 @@ int nandroid_restore_partition_extended(const char* backup_path, const char* mou
 
     ensure_directory(mount_point);
 
-    int callback = stat("/sdcard/clockworkmod/.hidenandroidprogress", &file_info) != 0;
+    int callback = 0; /* disable detailed progress bar */
 
     ui_print("Restoring %s...\n", name);
     if (backup_filesystem == NULL) {
@@ -523,15 +556,21 @@ int nandroid_restore_partition(const char* backup_path, const char* root) {
     return nandroid_restore_partition_extended(backup_path, root, 1);
 }
 
-int nandroid_restore(const char* backup_path, int restore_boot, int restore_system, int restore_data, int restore_cache, int restore_sdext, int restore_wimax)
+int nandroid_restore(const char* backup_path,
+    int restore_boot, int restore_system, int restore_data, int restore_cache, int restore_sdext, int restore_wimax, int restore_osh, int restore_systemorig)
 {
     ui_set_background(BACKGROUND_ICON_INSTALLING);
     ui_show_indeterminate_progress();
     yaffs_files_total = 0;
 
-    if (ensure_path_mounted(backup_path) != 0)
-        return print_and_error("Can't mount backup path\n");
-    
+    char sdcard_path[PATH_MAX] = "/emmc";
+    if (strcmp(backup_path, "/sdcard") == 0)
+        sprintf(sdcard_path, "/sdcard");
+    if (ensure_path_mounted(sdcard_path) != 0) {
+        ui_print("Can't mount %s\n", sdcard_path);
+        return 1;
+    }
+
     char tmp[PATH_MAX];
 
     ui_print("Checking MD5 sums...\n");
@@ -541,8 +580,10 @@ int nandroid_restore(const char* backup_path, int restore_boot, int restore_syst
     
     int ret;
 
+#ifndef BOARD_HAS_LOCKED_BOOTLOADER
     if (restore_boot && NULL != volume_for_path("/boot") && 0 != (ret = nandroid_restore_partition(backup_path, "/boot")))
         return ret;
+#endif
     
     struct stat s;
     Volume *vol = volume_for_path("/wimax");
@@ -573,25 +614,41 @@ int nandroid_restore(const char* backup_path, int restore_boot, int restore_syst
         }
     }
 
+    if (restore_systemorig && 0 != (ret = nandroid_restore_partition(backup_path, "/systemorig")))
+        return ret;
+
     if (restore_system && 0 != (ret = nandroid_restore_partition(backup_path, "/system")))
         return ret;
 
-    if (restore_data && 0 != (ret = nandroid_restore_partition(backup_path, "/data")))
-        return ret;
-        
-    if (has_datadata()) {
-        if (restore_data && 0 != (ret = nandroid_restore_partition(backup_path, "/datadata")))
+    if (restore_data) {
+        if (0 != (ret = nandroid_restore_partition(backup_path, "/data")))
             return ret;
-    }
 
-    if (restore_data && 0 != (ret = nandroid_restore_partition_extended(backup_path, "/sdcard/.android_secure", 0)))
-        return ret;
+        if (has_datadata()) {
+            if (0 != (ret = nandroid_restore_partition(backup_path, "/datadata")))
+                return ret;
+        }
+
+        if (0 != (ret = nandroid_restore_partition_extended(backup_path, "/sdcard/.android_secure", 0)))
+            return ret;
+#ifdef BOARD_HAS_SDCARD_INTERNAL
+        if (0 != (ret = nandroid_restore_partition_extended(backup_path, "/emmc/.android_secure", 0)))
+            return ret;
+#endif
+    }
 
     if (restore_cache && 0 != (ret = nandroid_restore_partition_extended(backup_path, "/cache", 0)))
         return ret;
 
+#ifdef BOARD_HAS_SDEXT
     if (restore_sdext && 0 != (ret = nandroid_restore_partition(backup_path, "/sd-ext")))
         return ret;
+#endif
+
+#ifdef BOARD_HAS_WEBTOP
+    if (restore_osh && 0 != (ret = nandroid_restore_partition_extended(backup_path, "/osh", 0)))
+        return ret;
+#endif
 
     sync();
     ui_set_background(BACKGROUND_ICON_NONE);
@@ -609,6 +666,7 @@ int nandroid_usage()
 
 int nandroid_main(int argc, char** argv)
 {
+    safemode = get_safe_mode();
     if (argc > 3 || argc < 2)
         return nandroid_usage();
     
@@ -618,15 +676,15 @@ int nandroid_main(int argc, char** argv)
             return nandroid_usage();
         
         char backup_path[PATH_MAX];
-        nandroid_generate_timestamp_path(backup_path);
-        return nandroid_backup(backup_path);
+        nandroid_generate_timestamp_path(backup_path, (argc == 3) ? argv[2] : "/sdcard");
+        return nandroid_backup(backup_path, (argc == 3) ? argv[2] : "/sdcard", 0, (safemode) ? 1 : 0);
     }
 
     if (strcmp("restore", argv[1]) == 0)
     {
         if (argc != 3)
             return nandroid_usage();
-        return nandroid_restore(argv[2], 1, 1, 1, 1, 1, 0);
+        return nandroid_restore(argv[2], 1, 1, 1, 1, 1, 0, 1, (safemode) ? 0 : 1);
     }
     
     return nandroid_usage();

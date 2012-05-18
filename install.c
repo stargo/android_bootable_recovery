@@ -125,7 +125,8 @@ try_update_binary(const char *path, ZipArchive *zip) {
         return INSTALL_UPDATE_BINARY_MISSING;
     }
 
-    char* binary = "/tmp/update_binary";
+    char* binary = "/sbin/update_binary";
+    /* Don't overwrite the binary -- special protections
     unlink(binary);
     int fd = creat(binary, 0755);
     if (fd < 0) {
@@ -141,6 +142,7 @@ try_update_binary(const char *path, ZipArchive *zip) {
         mzCloseZipArchive(zip);
         return 1;
     }
+    */
 
     int pipefd[2];
     pipe(pipefd);

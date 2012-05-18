@@ -76,6 +76,10 @@ Value* MountFn(const char* name, State* state, int argc, Expr* argv[]) {
         ErrorAbort(state, "location argument to %s() can't be empty", name);
         goto done;
     }
+    if (strcmp(location,BOARD_NONSAFE_SYSTEM_DEVICE) == 0) {
+        /* dynamically change system block device mount to /dev/block/system alias */
+        location = strdup("/dev/block/system");
+    }
     if (strlen(mount_point) == 0) {
         ErrorAbort(state, "mount_point argument to %s() can't be empty", name);
         goto done;
@@ -211,6 +215,10 @@ Value* FormatFn(const char* name, State* state, int argc, Expr* argv[]) {
     if (strlen(location) == 0) {
         ErrorAbort(state, "location argument to %s() can't be empty", name);
         goto done;
+    }
+    if (strcmp(location,BOARD_NONSAFE_SYSTEM_DEVICE) == 0) {
+        /* dynamically change system block device mount to /dev/block/system alias */
+        location = strdup("/dev/block/system");
     }
 
     if (strcmp(partition_type, "MTD") == 0) {

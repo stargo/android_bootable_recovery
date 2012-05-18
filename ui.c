@@ -205,8 +205,17 @@ static void draw_text_line(int row, const char* t) {
   }
 }
 
+#if 0
+static color32 background_color = {.r = 0, .g = 0, .b = 0, .a = 160 };
+static color32 title_color = {.r = 60, .g = 255, .b = 110, .a = 255};
+static color32 menu_color = {.r = 60, .g = 255, .b = 110, .a = 255};
+static color32 menu_sel_color = {.r = 0, .g = 0, .b = 0, .a = 255};
+static color32 script_color = {.r = 255, .g = 255, .b = 0, .a = 255};
+#endif
+
 //#define MENU_TEXT_COLOR 255, 160, 49, 255
 #define MENU_TEXT_COLOR 0, 191, 255, 255
+#define MENU_SEL_TEXT_COLOR 255, 255, 255, 255
 #define NORMAL_TEXT_COLOR 200, 200, 200, 255
 #define HEADER_TEXT_COLOR NORMAL_TEXT_COLOR
 
@@ -246,7 +255,7 @@ static void draw_screen_locked(void)
             gr_color(MENU_TEXT_COLOR);
             for (i = menu_show_start + menu_top; i < (menu_show_start + menu_top + j); ++i) {
                 if (i == menu_top + menu_sel) {
-                    gr_color(255, 255, 255, 255);
+                    gr_color(MENU_SEL_TEXT_COLOR);
                     draw_text_line(i - menu_show_start , menu[i]);
                     gr_color(MENU_TEXT_COLOR);
                 } else {
@@ -506,7 +515,7 @@ void ui_init(void)
 
 char *ui_copy_image(int icon, int *width, int *height, int *bpp) {
     pthread_mutex_lock(&gUpdateMutex);
-    draw_background_locked(gBackgroundIcon[icon]);
+    draw_background_locked(icon);
     *width = gr_fb_width();
     *height = gr_fb_height();
     *bpp = sizeof(gr_pixel) * 8;
