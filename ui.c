@@ -214,7 +214,7 @@ static color32 script_color = {.r = 255, .g = 255, .b = 0, .a = 255};
 #endif
 
 //#define MENU_TEXT_COLOR 255, 160, 49, 255
-#define MENU_TEXT_COLOR 0, 191, 255, 255
+#define MENU_TEXT_COLOR 60, 180, 110, 255
 #define MENU_SEL_TEXT_COLOR 255, 255, 255, 255
 #define NORMAL_TEXT_COLOR 200, 200, 200, 255
 #define HEADER_TEXT_COLOR NORMAL_TEXT_COLOR

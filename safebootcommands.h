@@ -11,5 +11,6 @@ int get_safe_mode();
 void show_safe_boot_menu();
 void toggle_safe_mode();
 void disable_safestrap();
+void quick_toggle_safe_mode();
 
 #endif
