@@ -365,6 +365,52 @@ static void *progress_thread(void *cookie)
 
 static int rel_sum = 0;
 
+#ifdef BOARD_HAS_VIRTUAL_KEYS
+static int in_touch = 0;
+static int slide_right = 0;
+static int slide_left = 0;
+static int touch_x = 0;
+static int touch_y = 0;
+static int old_x = 0;
+static int old_y = 0;
+static int diff_x = 0;
+static int diff_y = 0;
+static int touch_max_x = 1024; // BOARD_MAX_TOUCH_X;
+static int touch_max_y = 1024; // BOARD_MAX_TOUCH_Y;
+static int virtual_key_height = 64; // BOARD_VIRTUAL_KEY_HEIGHT;
+
+static void reset_gestures() {
+    diff_x = 0;
+    diff_y = 0;
+    old_x  = 0;
+    old_y = 0;
+    touch_x = 0;
+    touch_y = 0;
+}
+
+int input_buttons()
+{
+    int keywidth = gr_fb_width() / 4;
+    int final_code = 0;
+    
+    if(touch_x < keywidth) {
+        final_code = KEY_DOWN;
+    } else if(touch_x < keywidth*2) {
+        final_code = KEY_UP;
+    } else if(touch_x < keywidth*3) {
+        final_code = KEY_BACK;
+    } else {
+        final_code = KEY_ENTER;
+    }
+    
+    if (in_touch == 0) {
+        return final_code;
+    } else {
+        return 0;
+    }
+}
+#endif
+
 static int input_callback(int fd, short revents, void *data)
 {
     struct input_event ev;
@@ -401,6 +447,98 @@ static int input_callback(int fd, short revents, void *data)
     } else {
         rel_sum = 0;
     }
+
+#ifdef BOARD_HAS_VIRTUAL_KEYS
+    if(ev.type == 3 && ev.code == 57)  {
+        if(in_touch == 0) {
+            in_touch = 1; //starting to track touch...
+            reset_gestures();
+	}
+	else {
+            //finger lifted! lets run with this
+            ev.type = EV_KEY; //touch panel support!!!
+            int keywidth = gr_fb_width() / 4;
+            if(touch_y > (gr_fb_height() - virtual_key_height) && touch_x > 0) {
+                //they lifted in the touch panel region                
+                if(touch_x < keywidth) {
+                    //back button
+                    ev.code = KEY_DOWN;
+                } else if(touch_x < keywidth*2) {
+                    //down button
+                    ev.code = KEY_UP;
+                } else if(touch_x < keywidth*3) {
+                    //up button
+                    ev.code = KEY_BACK;
+                } else {
+                    //enter key
+                    ev.code = KEY_ENTER;
+                }
+		// no vibrator
+                // vibrate(VIBRATOR_TIME_MS);
+            }
+            if(slide_right == 1) {
+                ev.code = KEY_ENTER;
+                slide_right = 0;
+            } else if(slide_left == 1) {
+                ev.code = KEY_BACK;
+                slide_left = 0;
+            }
+
+            ev.value = 1;
+            in_touch = 0;
+            reset_gestures();
+        }
+    }
+    else if(ev.type == 3 && ev.code == 53) {
+        old_x = touch_x;
+        double temp = ((double)ev.value / (double)touch_max_x) * (double)gr_fb_width();
+        touch_x = (int)temp;
+        if (old_x != 0) diff_x += touch_x - old_x;
+    
+        if ((touch_y > (gr_fb_height() - virtual_key_height)) && (touch_x > 0)) {
+	    input_buttons();
+        }
+#if 0
+        else {
+            if(diff_x > 100) {
+                printf("Gesture forward generated\n");
+                slide_right = 1;
+                reset_gestures();
+            } else if(diff_x < -100) {
+                printf("Gesture back generated\n");
+                slide_left = 1;
+                reset_gestures();
+            }
+        }
+#endif
+    }
+    else if(ev.type == 3 && ev.code == 54) {
+        old_y = touch_y;
+        double temp = ((double)ev.value / (double)touch_max_y) * (double)gr_fb_height();
+        touch_y = (int)temp;
+        if (old_y != 0) diff_y += touch_y - old_y;
+
+        if ((touch_y > (gr_fb_height() - virtual_key_height)) && (touch_x > 0)) {
+            input_buttons();
+        }
+#if 0
+        else {
+            if (diff_y > 80) {
+                printf("Gesture Down generated\n");
+                ev.code = KEY_DOWN;
+                ev.type = EV_KEY;
+                reset_gestures();
+            }
+	    else if(diff_y < -80) {
+                printf("Gesture Up generated\n");
+                ev.code = KEY_UP;
+                ev.type = EV_KEY;
+                reset_gestures();
+            }
+        }
+#endif
+    }
+#endif
 
     if (ev.type != EV_KEY || ev.code > KEY_MAX)
         return 0;
