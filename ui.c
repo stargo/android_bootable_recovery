@@ -365,6 +365,10 @@ static void *progress_thread(void *cookie)
 
 static int rel_sum = 0;
 
+//kanged this vibrate stuff from teamwin (thanks guys!)
+#define VIBRATOR_TIMEOUT_FILE "/sys/class/timed_output/vibrator/enable"
+#define VIBRATOR_TIME_MS 20
+
 #ifdef BOARD_HAS_VIRTUAL_KEYS
 static int in_touch = 0;
 static int slide_right = 0;
@@ -378,6 +382,8 @@ static int diff_y = 0;
 static int touch_max_x = 1024; // BOARD_MAX_TOUCH_X;
 static int touch_max_y = 1024; // BOARD_MAX_TOUCH_Y;
 static int virtual_key_height = 64; // BOARD_VIRTUAL_KEY_HEIGHT;
+static int syn_counter = 0;
+static int touch_lift = 0;
 
 static void reset_gestures() {
     diff_x = 0;
@@ -422,41 +428,55 @@ static int input_callback(int fd, short revents, void *data)
         return -1;
 
     if (ev.type == EV_SYN) {
-        return 0;
-    } else if (ev.type == EV_REL) {
-        if (ev.code == REL_Y) {
-            // accumulate the up or down motion reported by
-            // the trackball.  When it exceeds a threshold
-            // (positive or negative), fake an up/down
-            // key event.
-            rel_sum += ev.value;
-            if (rel_sum > 3) {
-                fake_key = 1;
-                ev.type = EV_KEY;
-                ev.code = KEY_DOWN;
-                ev.value = 1;
-                rel_sum = 0;
-            } else if (rel_sum < -3) {
-                fake_key = 1;
-                ev.type = EV_KEY;
-                ev.code = KEY_UP;
-                ev.value = 1;
-                rel_sum = 0;
-            }
+        ++syn_counter;
+        // ui_print(">> SYN counter (%d)\n", syn_counter);
+        if (syn_counter > 3) {
+            // ui_print(">>> touch_lift == 1\n");
+            syn_counter = 0;
+            touch_lift = 1;
         }
-    } else {
-        rel_sum = 0;
+        return 0;
     }
+    else {
+        syn_counter = 0;
+        if (ev.type == EV_REL) {
+            if (ev.code == REL_Y) {
+                // accumulate the up or down motion reported by
+                // the trackball.  When it exceeds a threshold
+                // (positive or negative), fake an up/down
+                // key event.
+                rel_sum += ev.value;
+                if (rel_sum > 3) {
+                    fake_key = 1;
+                    ev.type = EV_KEY;
+                    ev.code = KEY_DOWN;
+                    ev.value = 1;
+                    rel_sum = 0;
+                } else if (rel_sum < -3) {
+                    fake_key = 1;
+                    ev.type = EV_KEY;
+                    ev.code = KEY_UP;
+                    ev.value = 1;
+                    rel_sum = 0;
+                }
+            }
+        } else {
+            rel_sum = 0;
+        }
+    }
+
+    // ui_print(">> type=%d, code=%d, value=%d\n", ev.type, ev.code, ev.value);
 
 #ifdef BOARD_HAS_VIRTUAL_KEYS
     if(ev.type == 3 && ev.code == 57)  {
         if(in_touch == 0) {
+            // ui_print(">> touch down\n");
             in_touch = 1; //starting to track touch...
             reset_gestures();
 	}
-	else {
-            //finger lifted! lets run with this
-            ev.type = EV_KEY; //touch panel support!!!
+	else if(touch_lift == 1) {
+            // ui_print(">> touch lift (x=%d, y=%d)\n", touch_x, touch_y);
+            ev.type = EV_KEY;
             int keywidth = gr_fb_width() / 4;
             if(touch_y > (gr_fb_height() - virtual_key_height) && touch_x > 0) {
                 //they lifted in the touch panel region                
@@ -473,8 +493,7 @@ static int input_callback(int fd, short revents, void *data)
                     //enter key
                     ev.code = KEY_ENTER;
                 }
-		// no vibrator
-                // vibrate(VIBRATOR_TIME_MS);
+                vibrate(VIBRATOR_TIME_MS);
             }
             if(slide_right == 1) {
                 ev.code = KEY_ENTER;
@@ -486,6 +505,7 @@ static int input_callback(int fd, short revents, void *data)
 
             ev.value = 1;
             in_touch = 0;
+            touch_lift = 0;
             reset_gestures();
         }
     }
@@ -496,7 +516,7 @@ static int input_callback(int fd, short revents, void *data)
         if (old_x != 0) diff_x += touch_x - old_x;
     
         if ((touch_y > (gr_fb_height() - virtual_key_height)) && (touch_x > 0)) {
-	    input_buttons();
+	    // input_buttons();
         }
 #if 0
         else {
@@ -519,7 +539,7 @@ static int input_callback(int fd, short revents, void *data)
         if (old_y != 0) diff_y += touch_y - old_y;
 
         if ((touch_y > (gr_fb_height() - virtual_key_height)) && (touch_x > 0)) {
-            input_buttons();
+            // input_buttons();
         }
 #if 0
         else {

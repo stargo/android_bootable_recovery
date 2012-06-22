@@ -45,6 +45,27 @@ static unsigned ev_count = 0;
 static unsigned ev_dev_count = 0;
 static unsigned ev_misc_count = 0;
 
+#define VIBRATOR_TIMEOUT_FILE "/sys/class/timed_output/vibrator/enable"
+#define VIBRATOR_TIME_MS 25
+
+int vibrate(int timeout_ms) {
+    char str[20];
+    int fd;
+    int ret;
+    
+    fd = open(VIBRATOR_TIMEOUT_FILE, O_WRONLY);
+    if(fd < 0)
+        return -1;
+    
+    ret = snprintf(str, sizeof(str), "%d", timeout_ms);
+    ret = write(fd, str, ret);
+    
+    if(ret < 0)
+        return -1;
+        
+    return 0;
+}
+
 int ev_init(ev_callback input_cb, void *data)
 {
     DIR *dir;
@@ -70,7 +91,7 @@ int ev_init(ev_callback input_cb, void *data)
             /* TODO: add ability to specify event masks. For now, just assume
              * that only EV_KEY and EV_REL event types are ever needed. */
 #ifdef BOARD_HAS_VIRTUAL_KEYS
-            if (!test_bit(EV_KEY, ev_bits) && !test_bit(EV_REL, ev_bits) && !test_bit(EV_ABS, ev_bits)) {
+            if (!test_bit(EV_KEY, ev_bits) && !test_bit(EV_REL, ev_bits) && !test_bit(EV_ABS, ev_bits) && !test_bit(EV_SYN, ev_bits)) {
 #else
             if (!test_bit(EV_KEY, ev_bits) && !test_bit(EV_REL, ev_bits)) {
 #endif
