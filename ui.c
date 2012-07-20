@@ -369,6 +369,9 @@ static int rel_sum = 0;
 #define VIBRATOR_TIMEOUT_FILE "/sys/class/timed_output/vibrator/enable"
 #define VIBRATOR_TIME_MS 20
 
+static int syn_counter = 0;
+static int touch_lift = 0;
+
 #ifdef BOARD_HAS_VIRTUAL_KEYS
 static int in_touch = 0;
 static int slide_right = 0;
@@ -382,8 +385,6 @@ static int diff_y = 0;
 static int touch_max_x = 1024; // BOARD_MAX_TOUCH_X;
 static int touch_max_y = 1024; // BOARD_MAX_TOUCH_Y;
 static int virtual_key_height = 64; // BOARD_VIRTUAL_KEY_HEIGHT;
-static int syn_counter = 0;
-static int touch_lift = 0;
 
 static void reset_gestures() {
     diff_x = 0;
