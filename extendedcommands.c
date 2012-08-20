@@ -923,10 +923,10 @@ void show_nandroid_advanced_restore_menu(const char* path)
     int i = 0;
     int j = 0;
 
-#ifdef BOARD_HAS_LOCKED_BOOTLOADER
+//#ifdef BOARD_HAS_LOCKED_BOOTLOADER
     list[0] = NULL;
     boot_offset = -1;
-#endif
+//#endif
 #ifndef BOARD_HAS_SDEXT
     // disable wimax restore option
     list[4] = NULL;
@@ -1361,10 +1361,10 @@ void create_fstab()
         return;
     }
     Volume *vol = volume_for_path("/boot");
-#ifndef BOARD_HAS_LOCKED_BOOTLOADER
-    if (NULL != vol && strcmp(vol->fs_type, "mtd") != 0 && strcmp(vol->fs_type, "emmc") != 0 && strcmp(vol->fs_type, "bml") != 0)
-         write_fstab_root("/boot", file);
-#endif
+//#ifndef BOARD_HAS_LOCKED_BOOTLOADER
+//    if (NULL != vol && strcmp(vol->fs_type, "mtd") != 0 && strcmp(vol->fs_type, "emmc") != 0 && strcmp(vol->fs_type, "bml") != 0)
+//         write_fstab_root("/boot", file);
+//#endif
     write_fstab_root("/cache", file);
     write_fstab_root("/data", file);
     if (has_datadata()) {

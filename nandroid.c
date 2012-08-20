@@ -253,13 +253,13 @@ int nandroid_backup(const char* backup_path, const char* sdcard_path, int skip_w
     sprintf(tmp, "mkdir -p %s", backup_path);
     __system(tmp);
 
-#ifndef BOARD_HAS_LOCKED_BOOTLOADER
-    if  (0 != (ret = nandroid_backup_partition(backup_path, "/boot")))
-        return ret;
+//#ifndef BOARD_HAS_LOCKED_BOOTLOADER
+//    if  (0 != (ret = nandroid_backup_partition(backup_path, "/boot")))
+//        return ret;
 
-    if (0 != (ret = nandroid_backup_partition(backup_path, "/recovery")))
-        return ret;
-#endif
+//    if (0 != (ret = nandroid_backup_partition(backup_path, "/recovery")))
+//        return ret;
+//#endif
 
     Volume *vol = volume_for_path("/wimax");
     if (vol != NULL && 0 == stat(vol->device, &s))
@@ -580,10 +580,10 @@ int nandroid_restore(const char* backup_path,
     
     int ret;
 
-#ifndef BOARD_HAS_LOCKED_BOOTLOADER
-    if (restore_boot && NULL != volume_for_path("/boot") && 0 != (ret = nandroid_restore_partition(backup_path, "/boot")))
-        return ret;
-#endif
+//#ifndef BOARD_HAS_LOCKED_BOOTLOADER
+//    if (restore_boot && NULL != volume_for_path("/boot") && 0 != (ret = nandroid_restore_partition(backup_path, "/boot")))
+//        return ret;
+//#endif
     
     struct stat s;
     Volume *vol = volume_for_path("/wimax");
