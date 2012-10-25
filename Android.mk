@@ -115,6 +115,9 @@ endif
 ifneq ($(TARGET_USE_CUSTOM_LUN_FILE_PATH),)
     LOCAL_CFLAGS += -DCUSTOM_LUN_FILE=\"$(TARGET_USE_CUSTOM_LUN_FILE_PATH)\"
 endif
+ifneq ($(TARGET_USE_CUSTOM_BATTERY_CAPACITY_PATH),)
+    LOCAL_CFLAGS += -DCUSTOM_BATTERY_CAPACITY_PATH=\"$(TARGET_USE_CUSTOM_BATTERY_CAPACITY_PATH)\"
+endif
 ifneq ($(BOARD_UMS_LUNFILE),)
     LOCAL_CFLAGS += -DCUSTOM_LUN_FILE=\"$(BOARD_UMS_LUNFILE)\"
 endif
@@ -129,6 +132,9 @@ ifeq ($(TW_SDEXT_NO_EXT4), true)
 endif
 ifeq ($(TW_FORCE_CPUINFO_FOR_DEVICE_ID), true)
     LOCAL_CFLAGS += -DTW_FORCE_CPUINFO_FOR_DEVICE_ID
+endif
+ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
+    LOCAL_CFLAGS += -DUSE_EXT4
 endif
 
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.

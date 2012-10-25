@@ -1327,6 +1327,9 @@ confirm_format(char* volume_name, char* volume_path) {
     }
 }
 
+#ifndef CUSTOM_BATTERY_CAPACITY_PATH
+#define CUSTOM_BATTERY_CAPACITY_PATH "/sys/class/power_supply/battery/capacity"
+#endif
 int get_battery_level(void)
 {
     static int lastVal = -1;
@@ -1337,8 +1340,7 @@ int get_battery_level(void)
     if (curTime.tv_sec > nextSecCheck)
     {
         char cap_s[4];
-        // FILE * cap = fopen("/sys/class/power_supply/battery/capacity","rt");
-        FILE * cap = fopen("/sys/class/power_supply/battery/charge_counter","rt");
+        FILE * cap = fopen(CUSTOM_BATTERY_CAPACITY_PATH,"rt");
         if (cap)
         {
             fgets(cap_s, 4, cap);

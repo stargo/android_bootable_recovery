@@ -36,8 +36,8 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	if (__system(cmd) != 0) return 1;
 	DataManager::SetValue("ui_progress", progressBase2);
 
-	DataManager::SetValue("tw_operation", "Writing ext3 filesystem on " + imageName + "...");
-	ui_print("Writing ext3 filesystem on %s...\n", imageName.c_str());
+	DataManager::SetValue("tw_operation", "Writing filesystem on " + imageName + "...");
+	ui_print("Writing filesystem on %s...\n", imageName.c_str());
 	sprintf(cmd, "/sbin/bbx losetup /dev/block/loop%d /ss/safestrap/%s/%s.img", loopNum, slotName.c_str(), imageName.c_str());
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
@@ -48,7 +48,11 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 
+#ifdef USE_EXT4
+	sprintf(cmd, "mke4fs /dev/block/%s", imageName.c_str());
+#else
 	sprintf(cmd, "mke2fs /dev/block/%s", imageName.c_str());
+#endif
 	fprintf(stderr, "createImagePartition::%s", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
@@ -57,6 +61,7 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 
+#ifndef USE_EXT4
 	sprintf(cmd, "tune2fs -j /dev/block/%s", imageName.c_str());
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
@@ -65,6 +70,7 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
+#endif
 	DataManager::SetValue("ui_progress", progressBase3);
 
 	return 0;
