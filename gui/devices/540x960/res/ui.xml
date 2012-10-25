@@ -321,7 +321,7 @@
 			<object type="console">
 				<slideout resource="slideout" x="240" y="920" />
 				<placement x="%console_x%" y="0" w="%console_width%" h="920" />
-				<color foreground="#BBBBBB" background="#000000" scroll="#303030" />
+				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
 				<font resource="fixed" />
 			</object>
 		</template>
