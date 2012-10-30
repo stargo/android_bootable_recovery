@@ -149,42 +149,58 @@ int setLocationData(const char* label, const char* blockDevice, const char* mtdD
 
 int getSizeViaDf(struct dInfo* mMnt)
 {
-	FILE* fp;
-    char command[255], line[512];
-    int ret = 0, include_block = 1;
-	unsigned int min_len;
+    FILE* fp;
+    char command[255], lines[4][512];
+    int ret = 0;
+    int i = 0;
 
-    min_len = strlen(mMnt->blk) + 2;
-	sprintf(command, "df %s", mMnt->blk);
-	fp = __popen(command, "r");
-    if (fp == NULL)
-        return -1;
+    lines[0][0] = '\0';
+    lines[1][0] = '\0';
+    lines[2][0] = '\0';
+    lines[3][0] = '\0';
 
-    while (fgets(line, sizeof(line), fp) != NULL)
-    {
+    sprintf(command, "df %s", mMnt->blk);
+    fp = __popen(command, "r");
+    if (fp == NULL) return -1;
+    while (fgets(lines[i], sizeof(lines[i]), fp) != NULL) {
+        i++;
+    }
+    fclose(fp);
+
+    for (i = 0; i < 3; i++) {
         unsigned long blocks, used, available;
         char device[64];
         char tmpString[64];
 
-        if (strncmp(line, "Filesystem", 10) == 0)
-			continue;
-		if (strlen(line) < min_len) {
-			include_block = 0;
-			continue;
-		}
-		if (include_block) {
-			sscanf(line, "%s %lu %lu %lu", device, &blocks, &used, &available);
-		} else {
-			// The device block string is so long that the df information is on the next line
-			int space_count = 0;
-			while (tmpString[space_count] == 32)
-				space_count++;
-			sscanf(line + space_count, "%lu %lu %lu", &blocks, &used, &available);
-		}
+        if (lines[i][0] == '\0')
+            continue;
+
+        if (strncmp(lines[i], "Filesystem", 10) == 0)
+            continue;
+
+        if (lines[2][0] == '\0') {
+            sscanf(lines[i], "%s %lu %lu %lu", device, &blocks, &used, &available);
+            LOGE("getSizesViaDf:: mnt=%s, blk=%s, device=%s, blocks=%lu, used=%lu, available=%lu\n", mMnt->mnt, mMnt->blk, device, blocks, used, available);
+        }
+        else {
+            if (i == 1) {
+                sscanf(lines[i], "%s", device);
+                LOGE("getSizesViaDf(1/2):: mnt=%s, blk=%s, device=%s\n", mMnt->mnt, mMnt->blk, device);
+                continue;
+            }
+            else if (i == 2) {
+                // The device block string is so long that the df information is on the next line
+                int space_count = 0;
+                while (lines[i][space_count] == 32)
+                    space_count++;
+                sscanf(lines[i] + space_count, "%lu %lu %lu", &blocks, &used, &available);
+                LOGE("getSizesViaDf(2/2):: mnt=%s, blk=%s, blocks=%lu, used=%lu, available=%lu\n", mMnt->mnt, mMnt->blk, blocks, used, available);
+            }
+        }
 		
         // Adjust block size to byte size
         unsigned long long size = blocks * 1024ULL;
-        sprintf(tmpString, "%s%s", tw_block, device);
+//      sprintf(tmpString, "%s%s", tw_block, device);
         setLocationData(mMnt->mnt, mMnt->blk, NULL, NULL, size, NULL);
     }
     fclose(fp);
@@ -214,6 +230,7 @@ int getSizesViaPartitions()
         // Adjust block size to byte size
         unsigned long long size = blocks * 1024ULL;
         sprintf(tmpString, "%s%s", tw_block, device);
+        LOGE("getSizesViaPartitions:: device=%s, blocks=%lu\n", tmpString, blocks);
         setLocationData(NULL, tmpString, NULL, NULL, size, NULL);
     }
     fclose(fp);
