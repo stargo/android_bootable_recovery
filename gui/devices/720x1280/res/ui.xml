@@ -252,14 +252,6 @@
 			</object>
 		</template>
 
-		<template name="action_page_console">
-			<object type="console">
-				<placement x="%console_x%" y="%row2_y%" w="%console_width%" h="%console_action_height%" />
-				<color foreground="%console_foreground%" background="%console_background%" scroll="%console_scroll%" />
-				<font resource="fixed" />
-			</object>
-		</template>
-
 		<template name="sort_options">
 			<object type="text" color="%text_color%">
 				<font resource="font" />
