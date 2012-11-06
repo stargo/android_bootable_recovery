@@ -180,12 +180,12 @@ int getSizeViaDf(struct dInfo* mMnt)
 
         if (lines[2][0] == '\0') {
             sscanf(lines[i], "%s %lu %lu %lu", device, &blocks, &used, &available);
-            LOGE("getSizesViaDf:: mnt=%s, blk=%s, device=%s, blocks=%lu, used=%lu, available=%lu\n", mMnt->mnt, mMnt->blk, device, blocks, used, available);
+//            LOGE("getSizesViaDf:: mnt=%s, blk=%s, device=%s, blocks=%lu, used=%lu, available=%lu\n", mMnt->mnt, mMnt->blk, device, blocks, used, available);
         }
         else {
             if (i == 1) {
                 sscanf(lines[i], "%s", device);
-                LOGE("getSizesViaDf(1/2):: mnt=%s, blk=%s, device=%s\n", mMnt->mnt, mMnt->blk, device);
+//                LOGE("getSizesViaDf(1/2):: mnt=%s, blk=%s, device=%s\n", mMnt->mnt, mMnt->blk, device);
                 continue;
             }
             else if (i == 2) {
@@ -194,7 +194,7 @@ int getSizeViaDf(struct dInfo* mMnt)
                 while (lines[i][space_count] == 32)
                     space_count++;
                 sscanf(lines[i] + space_count, "%lu %lu %lu", &blocks, &used, &available);
-                LOGE("getSizesViaDf(2/2):: mnt=%s, blk=%s, blocks=%lu, used=%lu, available=%lu\n", mMnt->mnt, mMnt->blk, blocks, used, available);
+//                LOGE("getSizesViaDf(2/2):: mnt=%s, blk=%s, blocks=%lu, used=%lu, available=%lu\n", mMnt->mnt, mMnt->blk, blocks, used, available);
             }
         }
 		
