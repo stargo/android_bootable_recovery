@@ -137,6 +137,16 @@ ifeq ($(TARGET_USERIMAGES_USE_EXT4), true)
     LOCAL_CFLAGS += -DUSE_EXT4
 endif
 
+# Safestrap virtual size defaults
+ifndef BOARD_DEFAULT_VIRT_SYSTEM_SIZE
+    BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 600
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_SYSTEM_SIZE=\"$(BOARD_DEFAULT_VIRT_SYSTEM_SIZE)\"
+ifndef BOARD_DEFAULT_VIRT_CACHE_SIZE
+    BOARD_DEFAULT_VIRT_CACHE_SIZE := 300
+endif
+LOCAL_CFLAGS += -DDEFAULT_VIRT_CACHE_SIZE=\"$(BOARD_DEFAULT_VIRT_CACHE_SIZE)\"
+
 # This binary is in the recovery ramdisk, which is otherwise a copy of root.
 # It gets copied there in config/Makefile.  LOCAL_MODULE_TAGS suppresses
 # a (redundant) copy of the binary in /system/bin for user builds.

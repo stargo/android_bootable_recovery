@@ -3552,10 +3552,12 @@
 		<page name="boot_slot_try_create">
 			<object type="action">
 				<action function="refreshsizesnt"></action>
-				<action function="set">tw_slot_system_size=600</action>
+				<action function="set">tw_slot_system_size=%tw_ss_default_virt_system_size%</action>
 				<action function="set">tw_slot_data_size=0</action>
-				<action function="set">tw_slot_cache_size=300</action>
-				<action function="set">tw_slot_total_size=800</action>
+				<action function="set">tw_slot_cache_size=%tw_ss_default_virt_cache_size%</action>
+				<action function="set">tw_slot_total_size=0</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+				<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
 			</object>
 
 			<object type="template" name="header" />
@@ -3573,10 +3575,10 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_system_size" var2="600" />
+				<condition var1="tw_slot_system_size" var2="%tw_ss_default_virt_system_size%" />
 				<placement x="%col1_x%" y="%row2_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>600 MB</text>
+				<text>%tw_ss_default_virt_system_size% MB</text>
 				<image resource="radio_true" />
 			</object>
 
@@ -3601,8 +3603,10 @@
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=1024</action>
-					<action function="set">tw_slot_total_size=900</action>
-					<action function="addsubtract">tw_slot_total_size+1024</action>
+					<action function="set">tw_slot_total_size=0</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
 				</actions>
 			</object>
 
@@ -3621,8 +3625,10 @@
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=2048</action>
-					<action function="set">tw_slot_total_size=900</action>
-					<action function="addsubtract">tw_slot_total_size+2048</action>
+					<action function="set">tw_slot_total_size=0</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
 				</actions>
 			</object>
 
@@ -3641,8 +3647,10 @@
 				<image resource="radio_false" />
 				<actions>
 					<action function="set">tw_slot_data_size=3072</action>
-					<action function="set">tw_slot_total_size=900</action>
-					<action function="addsubtract">tw_slot_total_size+3072</action>
+					<action function="set">tw_slot_total_size=0</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_system_size%</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_cache_size%</action>
+					<action function="addsubtract">tw_slot_total_size+%tw_slot_data_size%</action>
 				</actions>
 			</object>
 
@@ -3653,10 +3661,10 @@
 			</object>
 
 			<object type="button">
-				<condition var1="tw_slot_cache_size" var2="300" />
+				<condition var1="tw_slot_cache_size" var2="%tw_ss_default_virt_cache_size%" />
 				<placement x="%col1_x%" y="%row8_text_y%" />
 				<font resource="font" color="%text_color%" />
-				<text>300 MB</text>
+				<text>%tw_ss_default_virt_cache_size% MB</text>
 				<image resource="radio_true" />
 			</object>
 

@@ -498,23 +498,22 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 		return 0;
 	}
 	
-	if (function == "compute" || function == "addsubtract")
-	{
-		if (arg.find("+") != string::npos)
-        {
-            string varName = arg.substr(0, arg.find('+'));
-            string string_to_add = arg.substr(arg.find('+') + 1, string::npos);
+	if (function == "compute" || function == "addsubtract") {
+		if (arg.find("+") != string::npos) {
+			string varName = arg.substr(0, arg.find('+'));
+			string string_to_add = arg.substr(arg.find('+') + 1, string::npos);
+			DataManager::GetValue(string_to_add, string_to_add);
 			int amount_to_add = atoi(string_to_add.c_str());
 			int value;
 
 			DataManager::GetValue(varName, value);
-            DataManager::SetValue(varName, value + amount_to_add);
+			DataManager::SetValue(varName, value + amount_to_add);
 			return 0;
-        }
-		if (arg.find("-") != string::npos)
-        {
-            string varName = arg.substr(0, arg.find('-'));
-            string string_to_subtract = arg.substr(arg.find('-') + 1, string::npos);
+		}
+		if (arg.find("-") != string::npos) {
+			string varName = arg.substr(0, arg.find('-'));
+			string string_to_subtract = arg.substr(arg.find('-') + 1, string::npos);
+			DataManager::GetValue(string_to_subtract, string_to_subtract);
 			int amount_to_subtract = atoi(string_to_subtract.c_str());
 			int value;
 
@@ -522,9 +521,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 			value -= amount_to_subtract;
 			if (value <= 0)
 				value = 0;
-            DataManager::SetValue(varName, value);
+			DataManager::SetValue(varName, value);
 			return 0;
-        }
+		}
 	}
 	
 	if (function == "setguitimezone")

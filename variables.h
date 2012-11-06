@@ -17,11 +17,6 @@
 #ifndef _VARIABLES_HEADER_
 #define _VARIABLES_HEADER_
 
-#ifndef SS_VERSION_STR
-#define SS_VERSION_STR              "3.x"
-#endif
-#define SS_VERSION_VAR              "ss_version"
-
 #define TW_VERSION_STR              "2.2.2.1"
 
 #define TW_USE_COMPRESSION_VAR      "tw_use_compression"
@@ -57,7 +52,6 @@
 #define TW_BACKUP_SP2_SIZE          "tw_backup_sp2_size"
 #define TW_BACKUP_SP3_SIZE          "tw_backup_sp3_size"
 #define TW_STORAGE_FREE_SIZE        "tw_storage_free_size"
-#define TW_SS_STORAGE_FREE_SIZE     "tw_ss_storage_free_size"
 
 #define TW_RESTORE_SYSTEM_VAR       "tw_restore_system"
 #define TW_RESTORE_DATA_VAR         "tw_restore_data"
@@ -168,5 +162,14 @@
 
 // Max archive size for tar backups before we split (1.5GB)
 #define MAX_ARCHIVE_SIZE 1610612736LLU
+
+// Safestrap
+#ifndef SS_VERSION_STR
+#define SS_VERSION_STR                   "3.x"
+#endif
+#define SS_VERSION_VAR                   "ss_version"
+#define TW_SS_STORAGE_FREE_SIZE          "tw_ss_storage_free_size"
+#define TW_SS_DEFAULT_VIRT_SYSTEM_SIZE   "tw_ss_default_virt_system_size"
+#define TW_SS_DEFAULT_VIRT_CACHE_SIZE    "tw_ss_default_virt_cache_size"
 
 #endif  // _VARIABLES_HEADER_

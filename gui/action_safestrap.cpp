@@ -12,13 +12,6 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	__system(cmd);
 
-#if 0
-	sprintf(cmd, "rm /dev/block/%s", imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	__system(cmd);
-#endif
-
 	sprintf(cmd, "/sbin/bbx losetup -d /dev/block/loop%d", loopNum);
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
@@ -49,53 +42,6 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
-
-#if 0
-	sprintf(cmd, "ln -s /dev/block/loop%d /dev/block/%s", loopNum, imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-
-	sprintf(cmd, "mke2fs /dev/block/%s", imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-
-	sprintf(cmd, "tune2fs -j /dev/block/%s", imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-
-#ifdef USE_EXT4
-	// tune2fs -O extents,uninit_bg,dir_index /dev/DEV
-	sprintf(cmd, "tune2fs -O extents,uninit_bg,dir_index /dev/block/%s", imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-
-	// e2fsck -fDC0 /dev/DEV
-	sprintf(cmd, "e2fsck -fDC0 /dev/block/%s", imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-	sprintf(cmd, "/sbin/fsync /ss/safestrap/%s/%s.img", slotName.c_str(), imageName.c_str());
-	fprintf(stderr, "createImagePartition::%s\n", cmd);
-	usleep(100000);
-	if (__system(cmd) != 0) return 1;
-#endif
-#endif
 
 	DataManager::SetValue("ui_progress", progressBase3);
 
@@ -275,7 +221,7 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 		}
 		else {
 			int system_size = 600;
-			int data_size = 500;
+			int data_size = 1024;
 			int cache_size = 300;
 			char cmd[512];
 

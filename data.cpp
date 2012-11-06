@@ -351,7 +351,13 @@ void DataManager::SetDefaultValues()
     mConstValues.insert(make_pair("false", "0"));
 
     mConstValues.insert(make_pair(TW_VERSION_VAR, TW_VERSION_STR));
+
+// Safestrap
     mConstValues.insert(make_pair(SS_VERSION_VAR, SS_VERSION_STR));
+    fprintf(stderr, "TW_SS_DEFAULT_VIRT_SYSTEM_SIZE == %s\n", DEFAULT_VIRT_SYSTEM_SIZE);
+    fprintf(stderr, "TW_SS_DEFAULT_VIRT_CACHE_SIZE == %s\n", DEFAULT_VIRT_CACHE_SIZE);
+    mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_SYSTEM_SIZE, DEFAULT_VIRT_SYSTEM_SIZE));
+    mConstValues.insert(make_pair(TW_SS_DEFAULT_VIRT_CACHE_SIZE, DEFAULT_VIRT_CACHE_SIZE));
 
 #ifdef BOARD_HAS_NO_REAL_SDCARD
     mConstValues.insert(make_pair(TW_ALLOW_PARTITION_SDCARD, "0"));
