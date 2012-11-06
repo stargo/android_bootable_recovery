@@ -188,15 +188,23 @@ done:
 //    if fs_size < 0, then reserve that many bytes at the end of the partition
 Value* FormatFn(const char* name, State* state, int argc, Expr* argv[]) {
     char* result = NULL;
-    if (argc != 4) {
-        return ErrorAbort(state, "%s() expects 4 args, got %d", name, argc);
+    if ((argc <= 4) || (argc >= 5)) {
+        return ErrorAbort(state, "%s() expects 4 or 5 args, got %d", name, argc);
     }
     char* fs_type;
     char* partition_type;
     char* location;
     char* fs_size;
-    if (ReadArgs(state, argv, 4, &fs_type, &partition_type, &location, &fs_size) < 0) {
-        return NULL;
+    char* mount_point;
+    if (argc = 4) {
+        if (ReadArgs(state, argv, 4, &fs_type, &partition_type, &location, &fs_size) < 0) {
+            return NULL;
+        }
+    }
+    else {
+        if (ReadArgs(state, argv, 5, &fs_type, &partition_type, &location, &fs_size, &mount_point) < 0) {
+            return NULL;
+        }
     }
 
     if (strlen(fs_type) == 0) {
