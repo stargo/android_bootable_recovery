@@ -102,7 +102,10 @@ GUIAnimation::GUIAnimation(xml_node<>* node)
 
 int GUIAnimation::Render(void)
 {
-    if (!mAnimation || !mAnimation->GetResource(mFrame))      return -1;
+    if (!mAnimation || !mAnimation->GetResource(mFrame)) {
+        LOGE("Failed to load animation resource.  (x,y)=(%d,%d) (w,h)=(%d,%d)\n", mRenderX, mRenderY, mRenderW, mRenderH);
+        return -1;
+    }
 
     gr_blit(mAnimation->GetResource(mFrame), 0, 0, mRenderW, mRenderH, mRenderX, mRenderY);
     return 0;

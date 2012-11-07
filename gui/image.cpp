@@ -75,7 +75,10 @@ GUIImage::GUIImage(xml_node<>* node)
 
 int GUIImage::Render(void)
 {
-    if (!mImage || !mImage->GetResource())      return -1;
+    if (!mImage || !mImage->GetResource()) {
+        LOGE("Failed to load image resource.  (x,y)=(%d,%d) (w,h)=(%d,%d)\n", mRenderX, mRenderY, mRenderW, mRenderH);
+        return -1;
+    }
     gr_blit(mImage->GetResource(), 0, 0, mRenderW, mRenderH, mRenderX, mRenderY);
     return 0;
 }
