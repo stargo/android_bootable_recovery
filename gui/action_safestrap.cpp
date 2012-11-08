@@ -12,7 +12,11 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	__system(cmd);
 
+#ifdef USE_NEW_LOOPBACK
+	sprintf(cmd, "/sbin/bbx losetup -d /dev/block/loop-%s", imageName.c_str());
+#else
 	sprintf(cmd, "/sbin/bbx losetup -d /dev/block/loop%d", loopNum);
+#endif
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	__system(cmd);
@@ -33,12 +37,20 @@ int createImagePartition(string slotName, string imageName, int imageSize, strin
 
 	DataManager::SetValue("tw_operation", "Writing filesystem on " + imageName + "...");
 	ui_print("Writing filesystem on %s...\n", imageName.c_str());
+#ifdef USE_NEW_LOOPBACK
+	sprintf(cmd, "/sbin/bbx losetup /dev/block/loop-%s /ss/safestrap/%s/%s.img", imageName.c_str(), slotName.c_str(), imageName.c_str());
+#else
 	sprintf(cmd, "/sbin/bbx losetup /dev/block/loop%d /ss/safestrap/%s/%s.img", loopNum, slotName.c_str(), imageName.c_str());
+#endif
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
 
+#ifdef USE_NEW_LOOPBACK
+	sprintf(cmd, "/sbin/build-fs.sh %s -%s %s", imageName.c_str(), imageName.c_str(), slotName.c_str());
+#else
 	sprintf(cmd, "/sbin/build-fs.sh %s %d %s", imageName.c_str(), loopNum, slotName.c_str());
+#endif
 	fprintf(stderr, "createImagePartition::%s\n", cmd);
 	usleep(100000);
 	if (__system(cmd) != 0) return 1;
