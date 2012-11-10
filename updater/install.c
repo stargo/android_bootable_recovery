@@ -188,7 +188,7 @@ done:
 //    if fs_size < 0, then reserve that many bytes at the end of the partition
 Value* FormatFn(const char* name, State* state, int argc, Expr* argv[]) {
     char* result = NULL;
-    if ((argc <= 4) || (argc >= 5)) {
+    if ((argc < 4) || (argc > 5)) {
         return ErrorAbort(state, "%s() expects 4 or 5 args, got %d", name, argc);
     }
     char* fs_type;
