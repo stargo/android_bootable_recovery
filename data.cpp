@@ -430,9 +430,9 @@ void DataManager::SetDefaultValues()
 		// Device has /data/media
 		mConstValues.insert(make_pair(TW_USE_EXTERNAL_STORAGE, "0"));
 		mConstValues.insert(make_pair(TW_HAS_INTERNAL, "1"));
-		mConstValues.insert(make_pair(TW_INTERNAL_PATH, "/data/media"));
-		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, "/data"));
-		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "data"));
+		mConstValues.insert(make_pair(TW_INTERNAL_PATH, datamedia.mnt + "/media"));
+		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, datamedia.mnt));
+		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "datamedia"));
 		#ifdef TW_EXTERNAL_STORAGE_PATH
 			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
 				mValues.insert(make_pair(TW_ZIP_INTERNAL_VAR, make_pair("/emmc", 1)));
@@ -676,7 +676,7 @@ int DataManager::GetMagicValue(const string varName, string& value)
 void DataManager::ReadSettingsFile(void)
 {
 	// Load up the values for TWRP - Sleep to let the card be ready
-	char mkdir_path[255], settings_file[255];
+	char mkdir_path[255], settings_file[255], cmd[255];
 	int is_enc, has_dual, use_ext, has_data_media, has_ext;
 
 	GetValue(TW_IS_ENCRYPTED, is_enc);
@@ -720,7 +720,8 @@ void DataManager::ReadSettingsFile(void)
 		if (has_dual == 0) {
 			LOGI("Mounting /data/media to /sdcard\n");
 			system("umount /sdcard");
-			system("mount /data/media /sdcard");
+			sprintf(cmd, "mount %s/media /sdcard", datamedia.mnt);
+			system(cmd);
 		} else {
 			string ext_path;
 
@@ -729,11 +730,13 @@ void DataManager::ReadSettingsFile(void)
 				LOGI("Mounting /data/media to /emmc\n");
 				system("cd / && mkdir emmc");
 				system("umount /emmc");
-				system("mount /data/media /emmc");
+				sprintf(cmd, "mount %s/media /emmc", datamedia.mnt);
+				system(cmd);
 			} else {
 				LOGI("Mounting /data/media to /sdcard\n");
 				system("umount /sdcard");
-				system("mount /data/media /sdcard");
+				sprintf(cmd, "mount %s/media /sdcard", datamedia.mnt);
+				system(cmd);
 			}
 		}
 	}
@@ -742,7 +745,7 @@ void DataManager::ReadSettingsFile(void)
 	if (use_ext == 1)
 		SetValue(TW_STORAGE_FREE_SIZE, (int)((sdcext.sze - sdcext.used) / 1048576LLU));
 	else if (has_data_media == 1)
-		SetValue(TW_STORAGE_FREE_SIZE, (int)((dat.sze - dat.used) / 1048576LLU));
+		SetValue(TW_STORAGE_FREE_SIZE, (int)((datamedia.sze - datamedia.used) / 1048576LLU));
 	else
 		SetValue(TW_STORAGE_FREE_SIZE, (int)((sdcint.sze - sdcint.used) / 1048576LLU));
 	SetValue(TW_SS_STORAGE_FREE_SIZE, (int)((ss.sze - ss.used) / 1048576LLU));

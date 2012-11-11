@@ -50,7 +50,7 @@ unsigned long long getUsedSizeViaDu(const char* path);
 int getLocations();
 void updateUsedSized();
 
-extern struct dInfo tmp, sys, dat, datadata, boo, rec, cac, sdcext, sdcint, ase, sde, sp1, sp2, sp3, datdat, ss;
+extern struct dInfo tmp, sys, dat, datadata, boo, rec, cac, sdcext, sdcint, ase, sde, sp1, sp2, sp3, datdat, ss, datamedia;
 extern char tw_device_name[20];
 void update_system_details();
 int decrypt_device(void);

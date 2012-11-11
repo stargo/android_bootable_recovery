@@ -676,6 +676,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         }
         if (function == "wipe")
         {
+            char cmd[512];
             operation_start("Format");
             DataManager::SetValue("tw_partition", arg);
 
@@ -700,20 +701,24 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					DataManager::GetValue(TW_HAS_DUAL_STORAGE, dual_storage);
 					if (has_datamedia && !dual_storage) {
 						system("umount /sdcard");
-						system("mount /data/media /sdcard");
+						sprintf(cmd, "mount %s/media /sdcard", datamedia.mnt);
+						system(cmd);
 					}
 				} else if (arg == "INTERNAL") {
 					int has_datamedia, dual_storage;
 
 					DataManager::GetValue(TW_HAS_DATA_MEDIA, has_datamedia);
 					if (has_datamedia) {
-						ensure_path_mounted("/data");
-						__system("rm -rf /data/media");
-						__system("cd /data && mkdir media && chmod 775 media");
+						ensure_path_mounted(datamedia.mnt);
+						sprintf(cmd, "rm -rf %s/media", datamedia.mnt);
+						__system(cmd);
+						sprintf(cmd, "cd %s && mkdir media && chmod 775 media", datamedia.mnt);
+						__system(cmd);
 						DataManager::GetValue(TW_HAS_DUAL_STORAGE, dual_storage);
 						if (!dual_storage) {
 							system("umount /sdcard");
-							system("mount /data/media /sdcard");
+							sprintf(cmd, "mount %s/media /sdcard", datamedia.mnt);
+							system(cmd);
 						}
 					} else {
 						ret_val = tw_format(sdcint.fst, sdcint.blk);

@@ -35,7 +35,7 @@
 	#include "cutils/properties.h"
 #endif
 
-struct dInfo tmp, sys, dat, boo, rec, cac, sdcext, sdcint, ase, sde, sp1, sp2, sp3, datdat, ss;
+struct dInfo tmp, sys, dat, boo, rec, cac, sdcext, sdcint, ase, sde, sp1, sp2, sp3, datdat, ss, datamedia;
 char tw_device_name[20];
 
 void dumpPartitionTable(void);
@@ -54,6 +54,7 @@ struct dInfo* findDeviceByLabel(const char* label)
     if (strcmp(label, "sd-ext") == 0)       return &sde;
 	if (strcmp(label, "and-sec") == 0)      return &ase;
 	if (strcmp(label, "ss") == 0)           return &ss;
+	if (strcmp(label, "datamedia") == 0)    return &datamedia;
 	if (strcmp(label, "datadata") == 0) {
 		DataManager_SetIntValue(TW_HAS_DATADATA, 1);
 		return &datdat;
@@ -101,6 +102,7 @@ struct dInfo* findDeviceByBlockDevice(const char* blockDevice)
     if (strcmp(blockDevice, sp2.blk) == 0)  return &sp2;
     if (strcmp(blockDevice, sp3.blk) == 0)  return &sp3;
     if (strcmp(blockDevice, ss.blk) == 0)  return &ss;
+    if (strcmp(blockDevice, datamedia.blk) == 0)  return &datamedia;
     return NULL;
 }
 
@@ -477,12 +479,13 @@ void updateMntUsedSize(struct dInfo* mMnt)
 
     mMnt->used = ((st.f_blocks - st.f_bfree) * st.f_bsize);
 
-	if (DataManager_GetIntValue(TW_HAS_DATA_MEDIA) == 1 && strcmp(mMnt->blk, dat.blk) == 0) {
+	if (DataManager_GetIntValue(TW_HAS_DATA_MEDIA) == 1 && strcmp(mMnt->blk, datamedia.blk) == 0) {
 		LOGI("Device has /data/media\n");
 		unsigned long long data_used, data_media_used, actual_data;
-		data_used = getUsedSizeViaDu("/data/");
+		data_used = getUsedSizeViaDu(datamedia.mnt);
 		LOGI("Total used space on /data is: %llu\n", data_used);
-		data_media_used = getUsedSizeViaDu("/data/media/");
+		sprintf(path, "%s/media", datamedia.mnt);
+		data_media_used = getUsedSizeViaDu(path);
 		LOGI("Total in /data/media is: %llu\n", data_media_used);
 		actual_data = data_used - data_media_used;
 		LOGI("Actual data used: %llu\n", actual_data);
@@ -553,7 +556,7 @@ void updateUsedSized()
 	if (DataManager_GetIntValue(TW_USE_EXTERNAL_STORAGE) == 1)
 		DataManager_SetIntValue(TW_STORAGE_FREE_SIZE, (int)((sdcext.sze - sdcext.used) / 1048576LLU));
 	else if (DataManager_GetIntValue(TW_HAS_DATA_MEDIA) == 1)
-		DataManager_SetIntValue(TW_STORAGE_FREE_SIZE, (int)((dat.sze - dat.used) / 1048576LLU));
+		DataManager_SetIntValue(TW_STORAGE_FREE_SIZE, (int)((datamedia.sze - datamedia.used) / 1048576LLU));
 	else
 		DataManager_SetIntValue(TW_STORAGE_FREE_SIZE, (int)((sdcint.sze - sdcint.used) / 1048576LLU));
 	DataManager_SetIntValue(TW_SS_STORAGE_FREE_SIZE, (int)((ss.sze - ss.used) / 1048576LLU));
@@ -592,6 +595,7 @@ int getLocations()
     sp2.mountable = SP2_MOUNTABLE;
     sp3.mountable = SP3_MOUNTABLE;
     ss.mountable = 1;
+    datamedia.mountable = 1;
 
 	sys.is_sub_partition = 0;
     dat.is_sub_partition = 0;
@@ -607,6 +611,7 @@ int getLocations()
     sp2.is_sub_partition = 0;
     sp3.is_sub_partition = 0;
     ss.is_sub_partition = 0;
+    datamedia.is_sub_partition = 0;
 
     // This decides how we backup/restore a block
     sys.backup = files;
@@ -623,6 +628,7 @@ int getLocations()
     sp2.backup = SP2_BACKUP_METHOD;
     sp3.backup = SP3_BACKUP_METHOD;
     ss.backup = none;
+    datamedia.backup = none;
 
 	sys.is_encrypted = 0;
     dat.is_encrypted = 0;
@@ -638,6 +644,7 @@ int getLocations()
     sp2.is_encrypted = 0;
     sp3.is_encrypted = 0;
     ss.is_encrypted = 0;
+    datamedia.is_encrypted = 0;
 
     if (getLocationsViaProc("emmc") != 0 && getLocationsViaProc("mtd") != 0 && getLocationsViafstab() != 0)
     {
@@ -688,6 +695,7 @@ int getLocations()
     DataManager_SetIntValue("tw_sp2_is_mountable", sp2.mountable ? 1 : 0);
     DataManager_SetIntValue("tw_sp3_is_mountable", sp3.mountable ? 1 : 0);
     DataManager_SetIntValue("tw_ss_is_mountable", ss.mountable ? 1 : 0);
+    DataManager_SetIntValue("tw_datamedia_is_mountable", datamedia.mountable ? 1 : 0);
 
     listMntInfo(&boo, "boot");
     listMntInfo(&sys, "system");
@@ -704,6 +712,7 @@ int getLocations()
     listMntInfo(&sp2, "special 2");
     listMntInfo(&sp3, "special 3");
     listMntInfo(&ss, "ss");
+    listMntInfo(&datamedia, "datamedia");
     return 0;
 }
 
@@ -844,6 +853,7 @@ void createFstab()
         if (sp2.mountable)      createFstabEntry(fp, &sp2);
         if (sp3.mountable)      createFstabEntry(fp, &sp3);
         if (ss.mountable)       createFstabEntry(fp, &ss);
+        if (datamedia.mountable)       createFstabEntry(fp, &datamedia);
 	}
 	fclose(fp);
 }
@@ -897,6 +907,7 @@ void dumpPartitionTable(void)
     dumpPartitionEntry(&sp2);
     dumpPartitionEntry(&sp3);
     dumpPartitionEntry(&ss);
+    dumpPartitionEntry(&datamedia);
     fprintf(stderr, "+----------+-----------------------------+--------+----------+----------+---+---+\n");
 }
 
