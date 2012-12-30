@@ -173,8 +173,9 @@ void GUIAction::simulate_progress_bar(void)
 int GUIAction::flash_zip(std::string filename, std::string pageName, const int simulate)
 {
     int ret_val = 0;
+    char cmd[512];
 
-	DataManager::SetValue("ui_progress", 0);
+    DataManager::SetValue("ui_progress", 0);
 
     if (filename.empty())
     {
@@ -221,10 +222,27 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 	if (simulate) {
 		simulate_progress_bar();
 	} else {
+		string bootslot = "";
+		struct stat st;
+
+		DataManager::GetValue("tw_bootslot", bootslot);
+
+		// PROTECT Safestrap files if this is stock
+		if (bootslot == "stock") {
+			if (stat("/tmp/.dont-restore-ss", &st) == 0) {
+				sprintf(cmd, "rm /tmp/.dont-restore-ss");
+				__system(cmd);
+			}
+			ensure_path_mounted("/system");
+			sprintf(cmd, "/sbin/backup-ss.sh");
+			ret_val = __system(cmd);
+			ensure_path_unmounted("/system");
+			if (ret_val != 0) return 1;
+		}
+
 		ret_val = install_zip_package(filename.c_str());
 
 		// Now, check if we need to ensure TWRP remains installed...
-		struct stat st;
 		if (stat("/sbin/installTwrp", &st) == 0)
 		{
 			DataManager::SetValue("tw_operation", "Configuring TWRP");
@@ -234,6 +252,22 @@ int GUIAction::flash_zip(std::string filename, std::string pageName, const int s
 			{
 				ui_print("Unable to configure TWRP with this kernel.\n");
 			}
+		}
+
+		// Check for special .zip which updates SS (creates a file as /tmp/.dont-restore-ss)
+		if (stat("/tmp/.dont-restore-ss", &st) != 0) {
+			// RESTORE Safestrap files if this is stock
+			if (bootslot == "stock") {
+				ensure_path_mounted("/system");
+				sprintf(cmd, "/sbin/restore-ss.sh");
+				ret_val = __system(cmd);
+				ensure_path_unmounted("/system");
+				if (ret_val != 0) return 1;
+			}
+		}
+		else {
+			sprintf(cmd, "rm /tmp/.dont-restore-ss");
+			__system(cmd);
 		}
 	}
 
@@ -387,7 +421,7 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 
     if (function == "readBackup")
     {
-		set_restore_files();
+	set_restore_files();
         return 0;
     }
 
@@ -677,10 +711,9 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         if (function == "wipe")
         {
             char cmd[512];
+            int ret_val = 0;
             operation_start("Format");
             DataManager::SetValue("tw_partition", arg);
-
-			int ret_val = 0;
 
 			if (simulate) {
 				simulate_progress_bar();
@@ -725,8 +758,29 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 					}
 				} else if (arg == "EXTERNAL") {
 					ret_val = tw_format(sdcext.fst, sdcext.blk);
-				} else
+				} else {
+					string bootslot = "";
+					DataManager::GetValue("tw_bootslot", bootslot);
+
+					// PROTECT Safestrap if arg = "/system" and bootslot = "stock"
+					if ((bootslot == "stock") && (arg == "/system")) {
+						ensure_path_mounted("/system");
+						sprintf(cmd, "/sbin/backup-ss.sh");
+						ret_val = __system(cmd);
+						ensure_path_unmounted("/system");
+						if (ret_val != 0) return 1;
+					}
+
 					erase_volume(arg.c_str());
+
+					// RESTORE Safestrap files if this is stock
+					if ((bootslot == "stock") && (arg == "/system")) {
+						ensure_path_mounted("/system");
+						sprintf(cmd, "/sbin/restore-ss.sh");
+						ret_val = __system(cmd);
+						ensure_path_unmounted("/system");
+					}
+				}
 
 				if (arg == "/sdcard") {
 					ensure_path_mounted(SDCARD_ROOT);
@@ -752,6 +806,8 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
         if (function == "nandroid")
         {
             operation_start("Nandroid");
+            char cmd[512];
+            int ret_val = 0;
 
 			if (simulate) {
 				DataManager::SetValue("tw_partition", "Simulation");
@@ -760,8 +816,30 @@ int GUIAction::doAction(Action action, int isThreaded /* = 0 */)
 				if (arg == "backup") {
 					nandroid_back_exe();
 					DataManager::SetValue(TW_BACKUP_NAME, "(Current Date)");
-				} else if (arg == "restore")
+				} else if (arg == "restore") {
+					string bootslot = "";
+					DataManager::GetValue("tw_bootslot", bootslot);
+
+					// PROTECT Safestrap files if this is stock
+					if (bootslot == "stock") {
+						ensure_path_mounted("/system");
+						sprintf(cmd, "/sbin/backup-ss.sh");
+						ret_val = __system(cmd);
+						ensure_path_unmounted("/system");
+						if (ret_val != 0) return 1;
+					}
+
 					nandroid_rest_exe();
+
+					// RESTORE Safestrap files if this is stock
+					if (bootslot == "stock") {
+						ensure_path_mounted("/system");
+						sprintf(cmd, "/sbin/restore-ss.sh");
+						ret_val = __system(cmd);
+						ensure_path_unmounted("/system");
+						if (ret_val != 0) return 1;
+					}
+                                }
 				else {
 					operation_end(1, simulate);
 					return -1;

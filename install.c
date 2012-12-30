@@ -110,7 +110,12 @@ try_update_binary(const char *path, ZipArchive *zip) {
 	struct statfs st;
 	char* binary = (char*)malloc(20);
 
-	if (statfs(INCLUDED_BINARY_NAME, &st) != 0) {
+	const char *bootslot = DataManager_GetStrValue("tw_bootslot");
+	int stock_install = 0;
+	if (strncmp(bootslot,"stock",5) == 0)
+		stock_install = 1;
+
+	if ((statfs(INCLUDED_BINARY_NAME, &st) != 0) || (stock_install != 0)) {
 		// No update-binary included in recovery, extract it from the zip
 		strcpy(binary, "/tmp/update_binary");
 		const ZipEntry* binary_entry =

@@ -332,3 +332,4 @@ int GUIAction::doSafestrapThreadedAction(Action action, int isThreaded /* = 0 */
 	}
 	return -1;
 }
+

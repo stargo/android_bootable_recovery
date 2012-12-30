@@ -154,17 +154,18 @@ void wipe_data_without_wiping_media(void) {
 	// This handles wiping data on devices with "sdcard" in /data/media
     ui_print("Wiping data without wiping /data/media\n");
 	tw_mount(dat);
-    __system("rm -f /data/*");
-    __system("rm -f /data/.*");
 
     DIR* d;
     d = opendir("/data");
-    if (d != NULL)
-    {
+    if (d != NULL) {
         struct dirent* de;
         while ((de = readdir(d)) != NULL)
         {
-            if (strcmp(de->d_name, "media") == 0)   continue;
+            if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)   continue;
+            // The media folder is the "internal sdcard"
+            // The .layout_version file is responsible for determining whether 4.2 decides up upgrade
+            //    the media folder for multi-user.
+            if (strcmp(de->d_name, "media") == 0 || strcmp(de->d_name, ".layout_version") == 0)   continue;
 
             char cmd[256];
             sprintf(cmd, "rm -fr /data/%s", de->d_name);
