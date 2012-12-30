@@ -125,21 +125,13 @@ int DataManager::LoadValues(const string filename)
             mValues.insert(TNameValuePair(Name, TStrIntPair(Value, 1)));
     }
     fclose(in);
-
-	str = GetCurrentStoragePath();
-	str += "/TWRP/BACKUPS/";
-	str += device_id;
-	SetValue(TW_BACKUPS_FOLDER_VAR, str, 0);
-
+    SetBackupFolder();
     return 0;
 
 error:
     // File version mismatch. Use defaults.
     fclose(in);
-	str = GetCurrentStoragePath();
-	str += "/TWRP/BACKUPS/";
-	str += device_id;
-	SetValue(TW_BACKUPS_FOLDER_VAR, str, 0);
+    SetBackupFolder();
     return -1;
 }
 
@@ -339,6 +331,17 @@ void DataManager::DumpValues()
     }
 }
 
+void DataManager::SetBackupFolder()
+{
+    string str = GetCurrentStoragePath();
+    str += "/TWRP/BACKUPS/";
+
+    string dev_id;
+    GetValue("device_id", dev_id);
+    str += dev_id;
+    SetValue(TW_BACKUPS_FOLDER_VAR, str, 0);
+}
+
 void DataManager::SetDefaultValues()
 {
     string str, path;
@@ -375,7 +378,7 @@ void DataManager::SetDefaultValues()
 	LOGI("Internal path defined: '%s'\n", EXPAND(TW_INTERNAL_STORAGE_PATH));
 	mValues.insert(make_pair(TW_USE_EXTERNAL_STORAGE, make_pair("0", 1)));
 	mConstValues.insert(make_pair(TW_HAS_INTERNAL, "1"));
-	mConstValues.insert(make_pair(TW_INTERNAL_PATH, EXPAND(TW_INTERNAL_STORAGE_PATH)));
+	mValues.insert(make_pair(TW_INTERNAL_PATH, make_pair(EXPAND(TW_INTERNAL_STORAGE_PATH), 0)));
 	mConstValues.insert(make_pair(TW_INTERNAL_LABEL, EXPAND(TW_INTERNAL_STORAGE_MOUNT_POINT)));
 	path.clear();
 	path = "/";
@@ -430,8 +433,8 @@ void DataManager::SetDefaultValues()
 		// Device has /data/media
 		mConstValues.insert(make_pair(TW_USE_EXTERNAL_STORAGE, "0"));
 		mConstValues.insert(make_pair(TW_HAS_INTERNAL, "1"));
-		mConstValues.insert(make_pair(TW_INTERNAL_PATH, datamedia.mnt + "/media"));
-		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, datamedia.mnt));
+                mValues.insert(make_pair(TW_INTERNAL_PATH, make_pair("/" + datamedia.mnt + "/media", 0)));
+		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, "/" + datamedia.mnt));
 		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "datamedia"));
 		#ifdef TW_EXTERNAL_STORAGE_PATH
 			if (strcmp(EXPAND(TW_EXTERNAL_STORAGE_PATH), "/sdcard") == 0) {
@@ -447,7 +450,7 @@ void DataManager::SetDefaultValues()
 		// Device has no internal storage
 		mConstValues.insert(make_pair(TW_USE_EXTERNAL_STORAGE, "1"));
 		mConstValues.insert(make_pair(TW_HAS_INTERNAL, "0"));
-		mConstValues.insert(make_pair(TW_INTERNAL_PATH, "0"));
+                mValues.insert(make_pair(TW_INTERNAL_PATH, make_pair("0", 0)));
 		mConstValues.insert(make_pair(TW_INTERNAL_MOUNT, "0"));
 		mConstValues.insert(make_pair(TW_INTERNAL_LABEL, "0"));
 	#endif
@@ -479,7 +482,10 @@ void DataManager::SetDefaultValues()
 	SetValue(TW_USE_EXTERNAL_STORAGE, 1);
 	LOGI("Defaulting to external storage.\n");
 #endif
-
+#ifdef RECOVERY_SDCARD_ON_DATA
+    if (PartitionManager.Mount_By_Path("/" + datamedia.mnt, false) && TWFunc::Path_Exists("/" + datamedia.mnt + "/media/0"))
+        SetValue(TW_INTERNAL_PATH, "/" + datamedia.mnt + "/media/0");
+#endif
 	str = GetCurrentStoragePath();
 #ifdef RECOVERY_SDCARD_ON_DATA
 	#ifndef TW_EXTERNAL_STORAGE_PATH
@@ -495,7 +501,7 @@ void DataManager::SetDefaultValues()
 	SetValue(TW_ZIP_LOCATION_VAR, str.c_str(), 1);
 #endif
 	str += "/TWRP/BACKUPS/";
-    str += device_id;
+	str += device_id;
 	SetValue(TW_BACKUPS_FOLDER_VAR, str, 0);
 
     if (strlen(EXPAND(SP1_DISPLAY_NAME)))    mConstValues.insert(make_pair(TW_SP1_PARTITION_NAME_VAR, EXPAND(SP1_DISPLAY_NAME)));
@@ -718,7 +724,7 @@ void DataManager::ReadSettingsFile(void)
 	}
 	if (has_data_media == 1) {
 		if (has_dual == 0) {
-			LOGI("Mounting /data/media to /sdcard\n");
+			LOGI("Mounting %s/media to /sdcard\n", datamedia.mnt);
 			system("umount /sdcard");
 			sprintf(cmd, "mount %s/media /sdcard", datamedia.mnt);
 			system(cmd);
