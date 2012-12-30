@@ -399,7 +399,8 @@ int getLocationsViaProc(const char* fstype)
 unsigned long long getUsedSizeViaDu(const char* path)
 {
     char cmd[512];
-    sprintf(cmd, "du -sk %s | awk '{ print $1 }'", path);
+    sprintf(cmd, "du -sk %s | awk '{ print $1 }'\n", path);
+    LOGI("getUsedSizeViaDu(%s) = %s", path, cmd);
 
     FILE *fp;
     fp = __popen(cmd, "r");
@@ -514,6 +515,7 @@ void updateUsedSized()
     updateMntUsedSize(&sp2);
     updateMntUsedSize(&sp3);
     updateMntUsedSize(&ss);
+    updateMntUsedSize(&datamedia);
 
 	if (boo.used == 0 && boo.sze == 0) {
 		DataManager_SetIntValue(TW_HAS_BOOT_PARTITION, 0);
