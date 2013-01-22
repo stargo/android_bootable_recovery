@@ -95,6 +95,7 @@
 		<variable name="slider_y" value="1050" />
 		<variable name="slider_text_y" value="1117" />
 		<variable name="button_text_color" value="#CCCCCC" />
+		<variable name="button_text_warn_color" value="#FF3333" />
 		<variable name="button_text_disable_color" value="#666666" />
 		<variable name="button_text_highlight_color" value="#24b29a" />
 		<variable name="text_color" value="#FFFFFF" />
@@ -404,9 +405,13 @@
 			<object type="button">
 				<condition var1="tw_bootslot" op="=" var2="stock" />
 				<placement x="%col2_x%" y="%row1_y%" />
-				<font resource="font" color="%button_text_disable_color%" />
+				<font resource="font" color="%button_text_warn_color%" />
 				<text>Install</text>
 				<image resource="main_button" />
+				<actions>
+					<action function="queueclear"></action>
+					<action function="page">install</action>
+				</actions>
 			</object>
 
 			<object type="button">
@@ -464,9 +469,16 @@
 			<object type="template" name="header" />
 
 			<object type="text" color="%text_color%">
+				<condition var1="tw_bootslot" op="!=" var2="stock" />
 				<font resource="font" />
 				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
 				<text>Select Zip to Install</text>
+			</object>
+			<object type="text" color="%text_color_unsafe%">
+				<condition var1="tw_bootslot" op="=" var2="stock" />
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>Select Zip to Install to STOCK</text>
 			</object>
 
 			<object type="button">
@@ -557,6 +569,13 @@
 
 		<page name="flash_confirm">
 			<object type="template" name="header" />
+
+			<object type="text" color="%text_color_unsafe%">
+				<condition var1="tw_bootslot" op="=" var2="stock" />
+				<font resource="font" />
+				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
+				<text>WARNING: STOCK Install</text>
+			</object>
 
 			<object type="text" color="%text_color%">
 				<font resource="font" />
@@ -1113,9 +1132,20 @@
 			<object type="button">
 				<condition var1="tw_bootslot" var2="stock" />
 				<placement x="%col2_x%" y="%row2_y%" />
-				<font resource="font" color="%button_text_disable_color%" />
+				<font resource="font" color="%button_text_warn_color%" />
 				<text>System</text>
 				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_back=wipe</action>
+					<action function="set">tw_action=wipe</action>
+					<action function="set">tw_action_param=/system</action>
+					<action function="set">tw_text1=Wipe System?</action>
+					<action function="set">tw_text2=This will wipe your ROM</action>
+					<action function="set">tw_action_text1=Wiping System...</action>
+					<action function="set">tw_complete_text1=System Wipe Complete</action>
+					<action function="set">tw_slider_text=Swipe to Wipe</action>
+					<action function="page">confirm_action</action>
+				</actions>
 			</object>
 
 			<object type="button">
