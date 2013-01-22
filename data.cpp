@@ -54,7 +54,7 @@ extern "C"
     int get_battery_level(void);
     void get_device_id(void);
 
-    extern char device_id[15];
+    extern char device_id[64];
 
     void gui_notifyVarChange(const char *name, const char* value);
 
@@ -335,10 +335,7 @@ void DataManager::SetBackupFolder()
 {
     string str = GetCurrentStoragePath();
     str += "/TWRP/BACKUPS/";
-
-    string dev_id;
-    GetValue("device_id", dev_id);
-    str += dev_id;
+    str += device_id;
     SetValue(TW_BACKUPS_FOLDER_VAR, str, 0);
 }
 
@@ -483,8 +480,15 @@ void DataManager::SetDefaultValues()
 	LOGI("Defaulting to external storage.\n");
 #endif
 #ifdef RECOVERY_SDCARD_ON_DATA
-    if (PartitionManager.Mount_By_Path("/" + datamedia.mnt, false) && TWFunc::Path_Exists("/" + datamedia.mnt + "/media/0"))
-        SetValue(TW_INTERNAL_PATH, "/" + datamedia.mnt + "/media/0");
+    char fileloc[255];
+    sprintf(fileloc, "/%s", datamedia.mnt);
+    if (ensure_path_mounted(fileloc)) {
+        struct stat st;
+        sprintf(fileloc, "/%s/media/0", datamedia.mnt);
+        if (stat(fileloc, &st) == 0) {
+            SetValue(TW_INTERNAL_PATH, fileloc);
+        }
+    }
 #endif
 	str = GetCurrentStoragePath();
 #ifdef RECOVERY_SDCARD_ON_DATA
