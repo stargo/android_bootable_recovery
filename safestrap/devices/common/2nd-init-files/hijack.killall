@@ -21,10 +21,10 @@ unmountFS() {
 bbx sleep 1s
 
 # kill all services
-for i in $(getprop | bbx grep init.svc | bbx sed -r 's/^\[init\.svc\.(.+)\]:.*$/\1/'); do
+for i in $(tlbx getprop | bbx grep init.svc | bbx sed -r 's/^\[init\.svc\.(.+)\]:.*$/\1/'); do
 	if bbx [[ ! "${i}" = "$SKIP_SERVICE" ]]; then
 		echo "<1>stopping ${i}" > /dev/kmsg
-		stop ${i}
+		tlbx stop ${i}
 		bbx sleep 1
 	fi
 done
