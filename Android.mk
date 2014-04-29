@@ -443,6 +443,11 @@ ifeq ($(SS_INCLUDE_2NDINIT), true)
   include $(commands_recovery_local_path)/safestrap/2nd-init/Android.mk
 endif
 
+# tlbx
+ifeq ($(SS_INCLUDE_TLBX), true)
+  include $(commands_recovery_local_path)/safestrap/tlbx/Android.mk
+endif
+
 # splashmenu
 ifeq ($(SS_INCLUDE_SPLASHMENU), true)
     include $(commands_recovery_local_path)/safestrap/splashmenu/Android.mk
