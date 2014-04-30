@@ -168,9 +168,7 @@ if [ "$RUN_SS" = "1" ]; then
 		# extract recovery ramdisk
 		cd /
 		$BBX gzip -dc $RECOVERY_DIR/ramdisk-recovery.img | $BBX cpio -iu
-		$BBX mv /sbin/getprop /sbin/getprop.bak
-		$BBX rm /sbin/stop /sbin/stop.bak
-		$BBX rm /sbin/taskset /sbin/taskset.bak
+		$BBX mv /sbin/taskset /sbin/taskset.bak
 		$BBX unzip -o $RECOVERY_DIR/2nd-init.zip -d /sbin
 		$BBX chmod 750 /sbin/*
 		$BBX sync
