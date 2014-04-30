@@ -31,6 +31,7 @@ SPLASH_DISABLE_KEY := KEY_HOMEPAGE
 TW_DEFAULT_EXTERNAL_STORAGE := true
 TARGET_USERIMAGES_USE_EXT4 := true
 TW_BRIGHTNESS_PATH := /sys/class/backlight/panel/backlight
+TW_NO_SCREEN_BLANK := true
 
 # Virtual partition size default (in mb)
 BOARD_DEFAULT_VIRT_SYSTEM_SIZE := 2600
