@@ -325,6 +325,11 @@ if [ "$RUN_SS" = "1" ]; then
 fi
 fi
 
+if [ "$HIJACK_LOC" = "" -o "$HIJACK_BIN" = "" ]; then
+	HIJACK_LOC="bin"
+	HIJACK_BIN="logwrapper"
+fi
+
 # Run current file like expected by the system
 $BBX echo "<1>Passing through hijack: /system/$HIJACK_LOC/$HIJACK_BIN.bin $@" > /dev/kmsg
 
