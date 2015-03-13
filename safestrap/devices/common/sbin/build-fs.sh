@@ -32,4 +32,19 @@ else
 		mke2fs $DISABLE_JOURNAL -T $SYSTEM_FSTYPE $BLOCK_DIR/loop$LOOP_DEV
 	fi
 fi
-
+# Ensure the system is the correct fs type after rom-slot creation
+if [ "$SYATEM_FSTYPE" = "ext3" ] && [ "$LOOP_DEV" = "-system" ]; then
+	mkfs.ext3 $BLOCK_DIR/loop$LOOP_DEV
+else
+	if [ "$LOOP_DEV" = "-system" ]; then
+		mke2fs $DISABLE_JOURNAL -T $SYSTEM_FSTYPE $BLOCK_DIR/loop$LOOP_DEV
+	fi
+fi
+#Same for userdata
+if [ "$USERDATA_FSTYPE" = "ext3" ] && [ "$LOOP_DEV" = "-userdata" ]; then
+	mkfs.ext3 $BLOCK_DIR/loop$LOOP_DEV
+else
+	if [ "$LOOP_DEV" = "-userdata" ]; then
+		mke2fs $DISABLE_JOURNAL -T $USERDATA_FSTYPE $BLOCK_DIR/loop$LOOP_DEV
+	fi
+fi
