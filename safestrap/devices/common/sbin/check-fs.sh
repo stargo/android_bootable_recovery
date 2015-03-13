@@ -16,3 +16,15 @@ else
 	e2fsck -pfvy $BLOCK_DIR/loop$LOOP_DEV
 fi
 
+# Ensure the system is the correct fs type after rom-slot creation
+if [ "$USERDATA_FSTYPE" = "ext3" ] && [ "$LOOP_DEV" = "-userdata" ]; then
+	fsck.ext3 $BLOCK_DIR/loop$LOOP_DEV
+else
+	e2fsck -pfvy $BLOCK_DIR/loop$LOOP_DEV
+fi
+
+if [ "$SYSTEM_FSTYPE" = "ext3" ] && [ "$LOOP_DEV" = "-system" ]; then
+	fsck.ext3 $BLOCK_DIR/loop$LOOP_DEV
+else
+	e2fsck -pfvy $BLOCK_DIR/loop$LOOP_DEV
+fi
