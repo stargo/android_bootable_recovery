@@ -29,6 +29,12 @@ if [ "$SS_SLOT" = "stock" ]; then
 	$BBX ln -s $BLOCK_DIR/$BLOCK_CACHE-orig $BLOCK_DIR/$BLOCK_CACHE
 #	$BBX ln -s $BLOCK_DIR/$BLOCK_BOOT-orig $BLOCK_DIR/$BLOCK_BOOT
 	$BBX ln -s /dev/null $BLOCK_DIR/$BLOCK_BOOT
+elif [ "$SS_SLOT" = "altpart" ]; then
+	$BBX ln -s $BLOCK_DIR/$BLOCK_WEBTOP $BLOCK_DIR/$BLOCK_SYSTEM
+	$BBX ln -s $BLOCK_DIR/$BLOCK_USERDATA-orig $BLOCK_DIR/$BLOCK_USERDATA
+	$BBX ln -s $BLOCK_DIR/$BLOCK_CACHE-orig $BLOCK_DIR/$BLOCK_CACHE
+#	$BBX ln -s $BLOCK_DIR/loop-boot $BLOCK_DIR/$BLOCK_BOOT
+	$BBX ln -s /dev/null $BLOCK_DIR/$BLOCK_BOOT
 else
 	$BBX losetup $BLOCK_DIR/loop-system $SS_DIR/$SS_SLOT/system.img
 	$BBX losetup $BLOCK_DIR/loop-userdata $SS_DIR/$SS_SLOT/userdata.img

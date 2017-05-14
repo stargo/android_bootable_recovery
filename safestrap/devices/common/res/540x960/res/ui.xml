@@ -4686,12 +4686,14 @@
 
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="!=" var2="altpart" />
 				<font resource="font" />
 				<placement x="%col1_x%" y="%row6_text_y%" />
 				<text>Nickname:</text>
 			</object>
 			<object type="text" color="%text_color%">
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="!=" var2="altpart" />
 				<font resource="font" />
 				<placement x="%center_x%" y="%row6_text_y%" />
 				<text>%tw_slotname%</text>
@@ -4738,6 +4740,7 @@
 
 			<object type="button">
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="!=" var2="altpart" />
 				<placement x="%col2_x%" y="%row3_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Set Nickname</text>
@@ -4751,6 +4754,7 @@
 			<object type="button">
 				<condition var1="tw_trybootslot" op="!=" var2="tw_bootslot" />
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="!=" var2="altpart" />
 				<placement x="%col1_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_disable_color%" />
 				<text>FS Check (Not Active)</text>
@@ -4759,6 +4763,7 @@
 			<object type="button">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="!=" var2="altpart" />
 				<placement x="%col1_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>FS Check</text>
@@ -4771,6 +4776,7 @@
 			<object type="button">
 				<condition var1="tw_trybootslot" op="!=" var2="tw_bootslot" />
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="!=" var2="altpart" />
 				<placement x="%col2_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_color%" />
 				<text>Delete</text>
@@ -4789,6 +4795,7 @@
 			<object type="button">
 				<condition var1="tw_trybootslot" op="=" var2="tw_bootslot" />
 				<condition var1="tw_trybootslot" op="!=" var2="stock" />
+				<condition var1="tw_trybootslot" op="!=" var2="altpart" />
 				<placement x="%col2_x%" y="%row4_y%" />
 				<font resource="font" color="%button_text_disable_color%" />
 				<text>Delete</text>
@@ -4872,6 +4879,29 @@
 				<font resource="font" />
 				<placement x="%center_x%" y="%row1_header_y%" placement="5" />
 				<text>Choose Boot ROM (highlighted is active)</text>
+			</object>
+
+			<object type="button">
+				<condition var1="tw_bootslot" op="!=" var2="altpart" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_color%" />
+				<text>Webtop -&gt; System</text>
+				<image resource="main_button" />
+				<actions>
+					<action function="set">tw_trybootslot=altpart</action>
+					<action function="page">boot_slot_manage</action>
+				</actions>
+			</object>
+			<object type="button">
+				<condition var1="tw_bootslot" var2="altpart" />
+				<placement x="%col2_x%" y="%row2_y%" />
+				<font resource="font" color="%button_text_highlight_color%" />
+				<text>Webtop -&gt; System</text>
+				<image resource="main_button_highlight" />
+				<actions>
+					<action function="set">tw_trybootslot=altpart</action>
+					<action function="page">boot_slot_manage</action>
+				</actions>
 			</object>
 
 			<object type="button">

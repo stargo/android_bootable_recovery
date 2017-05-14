@@ -5,6 +5,5 @@
 /data           ext3      /dev/block/userdata
 /cache          ext3      /dev/block/cache
 /system         ext3      /dev/block/system                        flags=usermrf
-/osh            ext3      /dev/block/webtop                        flags=display="Webtop";backup=y;usermrf
 /systemorig     auto      /dev/block/mmcblk1p20-orig               flags=hidden
 /ss             vfat      /dev/block/emstorage                     flags=hidden
