@@ -9,6 +9,7 @@ SS_CHECK_FILE=/.safestrapped
 CURRENT_SYS_DIR=/system
 CURRENT_USER_DIR=/data
 ALT_SYSTEM_MODE="0"
+ALT_PART="0"
 RUN_SS="0"
 
 if [ "$2" = "pds" ]; then
@@ -96,6 +97,11 @@ if [ "$RUN_SS" = "1" ]; then
 		if [ -f "$SS_DIR/$SLOT_LOC/system.img" ] && [ -f "$SS_DIR/$SLOT_LOC/userdata.img" ] && [ -f "$SS_DIR/$SLOT_LOC/cache.img" ]; then
 			ALT_SYSTEM_MODE="1"
 		fi
+	fi
+
+	# check if SLOT_LOC starts with altpart
+	if [ "${SLOT_LOC#\altpart}" != "${SLOT_LOC}" ]; then
+		ALT_PART="1"
 	fi
 
 	# check for .recovery_mode on current /data mount
@@ -218,9 +224,12 @@ if [ "$RUN_SS" = "1" ]; then
 		$BBX losetup $BLOCK_DIR/loop-system $SS_DIR/$SLOT_LOC/system.img
 		$BBX mount -t $SYSTEM_FSTYPE $BLOCK_DIR/loop-system $SYS2_MNT
 		CURRENT_SYS_DIR=$SYS2_MNT
+	elif [ "$SLOT_LOC" = "altpart" ]; then
+		$BBX mount -t $WEBTOP_FSTYPE $BLOCK_DIR/$BLOCK_WEBTOP $SYS2_MNT
+		CURRENT_SYS_DIR=$SYS2_MNT
 	fi
 
-	if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
+	if [ "$ALT_SYSTEM_MODE" = "1" ] || [ "$ALT_PART" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ] || [ -d "$CURRENT_SYS_DIR/etc/kexec" ]; then
 		if [ -f "/sbin/taskset" ]; then
 			$BBX mv /sbin/taskset /sbin/taskset.old
 		fi
@@ -228,11 +237,13 @@ if [ "$RUN_SS" = "1" ]; then
 		$BBX chmod 750 /sbin/*
 
 		# on virtual systems, check for hijacks, and remove
-		if [ "$ALT_SYSTEM_MODE" = "1" ] && [ -f "$SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN.bin" ]; then
-			$BBX rm $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
-			$BBX mv $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
-			$BBX chmod 755 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
-			$BBX chown 0.2000 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ "$ALT_PART" = "1" ]; then
+			if [ -f "$SYS2_MNT/$HIJACK_LOC/$HIJACK_BIN.bin" ]; then
+				$BBX rm $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+				$BBX mv $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN.bin $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+				$BBX chmod 755 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+				$BBX chown 0.2000 $CURRENT_SYS_DIR/$HIJACK_LOC/$HIJACK_BIN
+			fi
 		fi
 
 		# check for kexec files
@@ -244,6 +255,9 @@ if [ "$RUN_SS" = "1" ]; then
 				# cleanup loopback
 				$BBX umount $SYS2_MNT
 				$BBX losetup -d $BLOCK_DIR/loop-system
+			elif [ "$ALT_PART" = "1" ]; then
+				# umount alternative system
+				$BBX umount $SYS2_MNT
 			fi
 
 			# unmount SS
@@ -268,7 +282,7 @@ if [ "$RUN_SS" = "1" ]; then
 		fi
 
 		# check for alt-system or rootfs files
-		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
+		if [ "$ALT_SYSTEM_MODE" = "1" ] || [ "$ALT_PART" = "1" ] || [ -d "$CURRENT_SYS_DIR/etc/rootfs" ]; then
 			# BEGIN CLEANUP TODO: this should really be a device independant cleanup file
 			if [ -d "$RECOVERY_DIR/rootfs" ]; then
 				if [ -f "$RECOVERY_DIR/rootfs/sbin/adbd" ]; then
@@ -306,6 +320,9 @@ if [ "$RUN_SS" = "1" ]; then
 				# cleanup loopback
 				$BBX umount $SYS2_MNT
 				$BBX losetup -d $BLOCK_DIR/loop-system
+			elif [ "$ALT_PART" = "1" ]; then
+				# umount alternative system
+				$BBX umount $SYS2_MNT
 			fi
 
 			# unmount SS
@@ -339,6 +356,9 @@ if [ "$RUN_SS" = "1" ]; then
 		# cleanup loopback
 		$BBX umount $SYS2_MNT
 		$BBX losetup -d $BLOCK_DIR/loop-system
+	elif [ "$ALT_PART" = "1" ]; then
+		# umount alternative system
+		$BBX umount $SYS2_MNT
 	fi
 
 	# unmount safestrap partition

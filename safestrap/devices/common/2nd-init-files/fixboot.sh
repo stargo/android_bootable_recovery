@@ -69,6 +69,12 @@ if [ ! -e "$BLOCK_DIR/$BLOCK_SYSTEM-orig" ]; then
 		$BBX ln -s $BLOCK_DIR/loop-cache $BLOCK_DIR/$BLOCK_CACHE
 #		$BBX ln -s $BLOCK_DIR/loop-boot $BLOCK_DIR/$BLOCK_BOOT
 		$BBX ln -s /dev/null $BLOCK_DIR/$BLOCK_BOOT
+	elif [ "$SLOT_LOC" = "altpart" ]; then
+		$BBX ln -s $BLOCK_DIR/$BLOCK_WEBTOP $BLOCK_DIR/$BLOCK_SYSTEM
+		$BBX ln -s $BLOCK_DIR/$BLOCK_USERDATA-orig $BLOCK_DIR/$BLOCK_USERDATA
+		$BBX ln -s $BLOCK_DIR/$BLOCK_CACHE-orig $BLOCK_DIR/$BLOCK_CACHE
+#		$BBX ln -s $BLOCK_DIR/loop-boot $BLOCK_DIR/$BLOCK_BOOT
+		$BBX ln -s /dev/null $BLOCK_DIR/$BLOCK_BOOT
 	else
 		echo "stock" > $SS_DIR/active_slot
 		$BBX ln -s $BLOCK_DIR/$BLOCK_SYSTEM-orig $BLOCK_DIR/$BLOCK_SYSTEM
